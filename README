@@ -1,0 +1,2 @@
+This is an `unionfs' server for the Hurd.  The semantics are similar
+to BSD's unionfs.

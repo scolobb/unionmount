@@ -1,0 +1,6 @@
+Known bugs:
+
+ * it leaks memory, it seems that some lnodes are not destroyed,
+ * unionfs hangs when looking up recursive links, which point into the
+   unionfs
+ * emacs hangs when trying to save files in unionfs

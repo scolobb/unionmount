@@ -1,0 +1,7 @@
+Todo list for unionfs:
+
+ * implement filesystem notification support;
+   only update nodes when needed
+ * cache dirents (?)
+ * verify that the locking is correct
+ * increase performance
