@@ -49,6 +49,11 @@ error_t dir_entries_get (file_t dir, char **dirent_data,
 			 size_t *dirent_data_size,
 			 struct dirent ***dirent_list);
 
+char *make_filepath (char *, char *);
+error_t for_each_subdir (char *, error_t (*) (char *, char *));
+error_t for_each_subdir_priv (char *, error_t (*) (char *, char *, void *),
+			      void *);
+
 /* Lookup the file named NAME beneath DIR (or the cwd, if DIR is not a
    valid port.  Try to open with FLAGS0 first, and if that fails with
    FLAGS1; MODE is the mode to user for newly created files.  On

@@ -30,6 +30,8 @@
 #include "unionfs.h"
 #include "node.h"
 #include "version.h"
+#include "pattern.h"
+#include "stow.h"
 
 /* This variable is set to a non-zero value after parsing of the
    startup options.  Whenever the argument parser is later called to
@@ -49,6 +51,10 @@ const struct argp_option argp_common_options[] =
     { OPT_LONG_CACHE_SIZE, OPT_CACHE_SIZE, "SIZE", 0,
       "specify the maximum number of nodes in the cache" },
     { 0, 0, 0, 0, "Runtime options:", 1 },
+    { OPT_LONG_STOW, OPT_STOW, "STOWDIR", 0,
+      "stow given directory", 1},
+    { OPT_LONG_PATTERN, OPT_PATTERN, "PATTERN", 0,
+      "add only nodes of the underlying filesystem matching pattern", 1},
     { OPT_LONG_REMOVE, OPT_REMOVE, 0, 0,
       "remove the following filesystem", 1 },
     { 0 }
@@ -64,7 +70,13 @@ const struct argp_option argp_startup_options[] =
 error_t
 argp_parse_common_options (int key, char *arg, struct argp_state *state)
 {
-  static int ulfs_flags = 0, ulfs_remove = 0, ulfs_modified = 0;
+  static int ulfs_flags = 0, ulfs_remove = 0, ulfs_modified = 0,
+    ulfs_match = 0;
+  static struct patternlist ulfs_patternlist =
+    {    
+      .lock = MUTEX_INITIALIZER,
+      .head = NULL
+    };
   error_t err = 0;
 
   switch (key)
@@ -85,8 +97,24 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       ulfs_remove = 1;
       break;
 
+    case OPT_PATTERN:           /* --match  */
+      ulfs_match = 1;
+      patternlist_add (&ulfs_patternlist, arg);
+      break;
+
+    case OPT_STOW:		/* --stow */
+      stow_diradd (arg, ulfs_flags, &ulfs_patternlist, ulfs_remove);
+
+      ulfs_modified = 1;
+      ulfs_flags = ulfs_remove = 0;
+      ulfs_match = 0;
+      break;
+
     case OPT_UNDERLYING:	/* --underlying  */
     case ARGP_KEY_ARG:
+
+      fprintf (stderr, "adding %s\n", arg);
+
       if (ulfs_remove)
 	{
 	  err = ulfs_unregister (arg);
@@ -101,6 +129,7 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
 	error (EXIT_FAILURE, err, "ulfs_register");
       ulfs_modified = 1;
       ulfs_flags = ulfs_remove = 0;
+      ulfs_match = 0;
       break;
 
     case ARGP_KEY_END:

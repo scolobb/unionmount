@@ -25,6 +25,8 @@
 #define OPT_DEBUG      'd'
 #define OPT_CACHE_SIZE 'c'
 #define OPT_REMOVE     'r'
+#define OPT_PATTERN    'm'
+#define OPT_STOW       's'
 
 /* The long options.  */
 #define OPT_LONG_UNDERLYING "underlying"
@@ -32,6 +34,8 @@
 #define OPT_LONG_DEBUG      "debug"
 #define OPT_LONG_CACHE_SIZE "cache-size"
 #define OPT_LONG_REMOVE     "remove"
+#define OPT_LONG_PATTERN    "match"
+#define OPT_LONG_STOW       "stow"
 
 #define OPT_LONG(o) "--" o
 

@@ -84,7 +84,7 @@ error_t
 file_lookup (file_t dir, char *name, int flags0, int flags1,
 	     int mode, file_t *port, struct stat *stat)
 {
-  error_t err;
+  error_t err = 0;
   file_t p;
   struct stat s;
 
@@ -119,5 +119,140 @@ file_lookup (file_t dir, char *name, int flags0, int flags1,
       if (stat)
 	*stat = s;
     }
+  return err;
+}
+
+#include <fcntl.h>
+
+char *
+make_filepath (char *path, char *filename)
+{
+  int length;
+  char *filepath;
+
+  length = strlen (path) + strlen (filename) + 2;
+  filepath = malloc (length);
+  if (filepath == NULL) 
+    return NULL;
+  
+  strncpy (filepath, path, length);
+  strncat (filepath, filename, strlen (filename));
+
+  return filepath;
+}
+
+error_t
+for_each_subdir (char *path, error_t (*func) (char *, char *))
+{
+  struct dirent **dirent, **dirent_list;
+  char *dirent_data;
+  size_t dirent_data_size;
+  file_t dir;
+  error_t err;
+
+  dir = file_name_lookup (path, O_READ, 0);
+
+  err = dir_entries_get (dir, &dirent_data, &dirent_data_size, &dirent_list);
+  if (err)
+    return err;
+
+  for (dirent = dirent_list; (! err) && (*dirent); dirent++)
+    {
+      char *name;
+      struct stat filestat;
+
+      if ((!strcmp ((*dirent)->d_name, "."))
+	  || (!strcmp ((*dirent)->d_name, "..")))
+	continue;
+
+      name = make_filepath (path, (*dirent)->d_name);
+
+      err = stat (name, &filestat);
+
+      if (err)
+	return err;
+
+      free (name);
+
+      if (!S_ISDIR(filestat.st_mode))
+	continue;
+ 
+      err = func ((*dirent)->d_name, path);
+    }
+
+  return err;
+}
+
+error_t
+for_each_subdir_priv (char *path, error_t (*func) (char *, char *, void *),
+		      void *priv)
+{
+  struct dirent **dirent, **dirent_list;
+  char *dirent_data;
+  size_t dirent_data_size;
+  file_t dir;
+  error_t err;
+
+  dir = file_name_lookup (path, O_READ, 0);
+
+  err = dir_entries_get (dir, &dirent_data, &dirent_data_size, &dirent_list);
+  if (err)
+    return err;
+
+  for (dirent = dirent_list; (!err) && (*dirent); dirent++)
+    {
+      char *name;
+      struct stat filestat;
+
+      if ((!strcmp ((*dirent)->d_name, "."))
+	  || (!strcmp ((*dirent)->d_name, "..")))
+	continue;
+
+      name = make_filepath (path, (*dirent)->d_name);
+
+      err = stat (name, &filestat);
+
+      if (err)
+	return err;
+
+      free (name);
+
+      if (!S_ISDIR(filestat.st_mode))
+	continue;
+ 
+      func ((*dirent)->d_name, path, priv);
+    }
+
+  return err;
+}
+
+error_t
+for_each_file_priv (char *path, error_t (*func) (char *, char *, void *),
+		    void *priv)
+{
+  struct dirent **dirent, **dirent_list;
+  char *dirent_data;
+  size_t dirent_data_size;
+  file_t dir;
+  error_t err;
+
+  dir = file_name_lookup (path, O_READ, 0);
+
+  err = dir_entries_get (dir, &dirent_data, &dirent_data_size, &dirent_list);
+  if (err)
+    return err;
+
+  for (dirent = dirent_list; (!err) && (*dirent); dirent++)
+    {
+      char *name;
+      struct stat filestat;
+
+      if ((!strcmp ((*dirent)->d_name, "."))
+	  || (!strcmp ((*dirent)->d_name, "..")))
+	continue;
+
+      func ((*dirent)->d_name, path, priv);
+    }
+
   return err;
 }

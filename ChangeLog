@@ -1,3 +1,25 @@
+2005-01-31  Gianluca Guida  <glguida@gmail.com>
+
+	* pattern.c: New file.
+	* stow.c: Likewise.
+	* pattern.h: Likewise.
+	* stow.h: Likewise.
+	* Makefile (OBJS): Added pattern.o and stow.o
+
+	* node.c: Initialize variable err.
+	* lib.c (file_lookup): Initialize variable err.
+	Include <fcntl.h>.
+	(make_filepath, for_each_subdir, for_each_subdir_priv)
+	(for_each_file_priv): New function.
+	* lib.h (make_filepath, for_each_subdir, for_each_subdir_priv): New 
+	declaration.
+	* options.c: Include "pattern.h".
+	Include "stow.h".
+	(arg_common_options): Added entries for OPT_STOW and OPT_PATTERN.
+	(argp_parse_common_options): Handle OPT_STOW and OPT_PATTERN case.
+	* options.h (OPT_PATTERN, OPT_STOW, OPT_LONG_PATTERN, OPT_LONG_STOW): 
+	New declarations.
+	
 2003-07-05  Jeroen Dekkers  <jeroen@dekkers.cx>
 
 	* Makefile: Rewrite.

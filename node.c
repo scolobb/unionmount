@@ -360,7 +360,7 @@ node_create_root (node_t **root_node)
 {
   lnode_t *lnode;
   node_t *node;
-  error_t err;
+  error_t err = 0;
 
   err = lnode_create (NULL, &lnode);
   if (! err)

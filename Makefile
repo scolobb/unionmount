@@ -22,7 +22,7 @@ CFLAGS += -Wall -g -O2 -D_FILE_OFFSET_BITS=64 -std=gnu99 \
 LDFLAGS += -lnetfs -lfshelp -liohelp -lthreads \
            -lports -lihash -lshouldbeinlibc
 OBJS = main.o node.o lnode.o ulfs.o ncache.o netfs.o \
-       lib.o options.o
+       lib.o options.o pattern.o stow.o
 
 all: unionfs
 
