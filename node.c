@@ -26,6 +26,7 @@
 #include <error.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <stdio.h>
 
 #include "unionfs.h"
@@ -248,6 +249,7 @@ node_entries_get (node_t *node, node_dirent_t **dirents)
 {
   struct dirent **dirent_list, **dirent;
   node_dirent_t *node_dirent_list = NULL;
+  int dirent_data_size;
   char *dirent_data;
   error_t err = 0;
 
@@ -313,8 +315,8 @@ node_entries_get (node_t *node, node_dirent_t **dirents)
     {
       if (port_valid (node_ulfs->port))
 	{
-	  err = dir_entries_get (node_ulfs->port,
-				 &dirent_data, &dirent_list);
+	  err = dir_entries_get (node_ulfs->port, &dirent_data,
+				 &dirent_data_size, &dirent_list);
 	  if (! err)
 	    {
 	      for (dirent = dirent_list; (! err) && *dirent; dirent++)
@@ -324,6 +326,7 @@ node_entries_get (node_t *node, node_dirent_t **dirents)
 					 (*dirent)->d_fileno,
 					 (*dirent)->d_type);
 	      free (dirent_list);
+	      munmap (dirent_data, dirent_data_size);
 	    }
 	}
     }

@@ -1,4 +1,14 @@
 2002-12-08  Moritz Schulte  <moritz@duesseldorf.ccc.de>
 
+	* lib.c: Include <sys/mman.h>.
+	* node.c: Include <sys/mman.h>.
+	(node_entries_get): munmap dirent_data as returned by
+	dir_entries_get.
+	(node_entries_get): New variable: int dirent_data_size.
+	* lib.c (dir_entries_get): New argument: int *dirent_data_size.
+	(dir_entries_get): Do not forget to munmap DATA if something goes
+	wrong.
+	* lib.h: Update dir_entries_get declaration.
+	
 	* node.c (node_create_root): call lnode_destroy, if node_create
 	failed, not if lnode_create failed.  Reported by Richard Smith.

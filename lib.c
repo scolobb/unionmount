@@ -23,6 +23,7 @@
 #include <error.h>
 #include <dirent.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 #include "lib.h"
 
@@ -31,11 +32,12 @@
 struct mutex debug_msg_lock = MUTEX_INITIALIZER;
 
 /* Fetch directory entries for DIR; store the raw data as returned by
-   the dir_readdir RPC in *DIRENT_DATA and a list of pointers to the
-   dirent structures in *DIRENT_LIST.  */
+   the dir_readdir RPC in *DIRENT_DATA, the size of *DIRENT_DATA in
+   *DIRENT_DATA_SIZE and a list of pointers to the dirent structures
+   in *DIRENT_LIST.  */
 error_t
-dir_entries_get (file_t dir,
-		 char **dirent_data, struct dirent ***dirent_list)
+dir_entries_get (file_t dir, char **dirent_data, 
+		 int *dirent_data_size, struct dirent **dirent_list)
 {
   error_t err;
   size_t data_size;
@@ -60,10 +62,14 @@ dir_entries_get (file_t dir,
 	  *(list + i) = NULL;
 
 	  *dirent_data = data;
+	  *dirent_data_size = data_size;
 	  *dirent_list = list;
 	}
       else
-	err = ENOMEM;
+	{
+	  munmap (data, date_size);
+	  err = ENOMEM;
+	}
     }
   return err;
 }

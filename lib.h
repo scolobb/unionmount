@@ -42,10 +42,11 @@
 #define port_valid(p) ((p) != port_null)
 
 /* Fetch directory entries for DIR; store the raw data as returned by
-   the dir_readdir RPC in *DIRENT_DATA and a list of pointers to the
-   dirent structures in *DIRENT_LIST.  */
-error_t dir_entries_get (file_t dir,
-			 char **dirent_data, struct dirent ***dirent_list);
+   the dir_readdir RPC in *DIRENT_DATA, the size of *DIRENT_DATA in
+   *DIRENT_DATA_SIZE and a list of pointers to the dirent structures
+   in *DIRENT_LIST.  */
+error_t dir_entries_get (file_t dir, char **dirent_data,
+			 int *dirent_data_size, struct dirent **dirent_list);
 
 /* Lookup the file named NAME beneath DIR (or the cwd, if DIR is not a
    valid port.  Try to open with FLAGS0 first, and if that fails with
