@@ -124,6 +124,29 @@ stow_diradd (char *dir, int flags, struct patternlist *patternlist, int remove)
       .flags = flags,
       .remove = remove
     };
+  int dir_len;
+
+  dir_len = strlen(dir);
+  if (dir_len == 0)
+    {
+      error (EXIT_FAILURE, ARGP_ERR_UNKNOWN, "stow_diradd");
+    }
+
+  if (dir[dir_len - 1 ] != '/')
+    {
+      char *tmp;
+
+      tmp = (char *) malloc (dir_len + 1);
+
+      if (tmp == NULL)
+	error (EXIT_FAILURE, ENOMEM, "stow_diradd");
+
+      strncpy (tmp, dir, dir_len);
+
+      tmp[dir_len] = '/';
+
+      dir = tmp;
+    }
 
   err = for_each_subdir_priv (dir, _stow_scanstowentry, (void *)&mypriv);
 

@@ -1,5 +1,10 @@
 2005-01-31  Gianluca Guida  <glguida@gmail.com>
 
+	* stow.c (stow_diradd): Handle --stow argument with missing / 
+	correctly.
+
+2005-01-31  Gianluca Guida  <glguida@gmail.com>
+
 	* pattern.c: New file.
 	* stow.c: Likewise.
 	* pattern.h: Likewise.
