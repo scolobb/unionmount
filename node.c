@@ -363,10 +363,11 @@ node_create_root (node_t **root_node)
   if (! err)
     {
       err = node_create (lnode, &node);
-      mutex_unlock (&lnode->lock);
+      if (err)
+	lnode_destroy (lnode);
+      else
+	mutex_unlock (&lnode->lock);
     }
-  else
-    lnode_destroy (lnode);
 
   if (! err)
     *root_node = node;
