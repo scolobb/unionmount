@@ -1,4 +1,6 @@
-2003-07-05  Jeroen Dekkers <jeroen@dekkers.cx>
+2003-07-05  Jeroen Dekkers  <jeroen@pc-jeroen>
+
+	* Makefile: Rewrite.
 
 	* netfs.c (netfs_attempt_create_file): Unlock DIR.
 	(netfs_attempt_mkfile): Likewise.
@@ -27,3 +29,7 @@
 	
 	* node.c (node_create_root): call lnode_destroy, if node_create
 	failed, not if lnode_create failed.  Reported by Richard Smith.
+
+  Copyright 2002, 2003 Free Software Foundation, Inc.
+  Copying and distribution of this file, with or without modification, are
+  permitted provided the copyright notice and this notice are preserved.
