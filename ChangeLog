@@ -1,5 +1,6 @@
 2002-12-08  Moritz Schulte  <moritz@duesseldorf.ccc.de>
 
+	* BUGS: Remove the memory-leak bug.
 	* lib.c: Include <sys/mman.h>.
 	* node.c: Include <sys/mman.h>.
 	(node_entries_get): munmap dirent_data as returned by
