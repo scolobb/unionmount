@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -282,6 +282,7 @@ error_t
 netfs_attempt_mkfile (struct iouser *user, struct node *dir,
 		      mode_t mode, struct node **np)
 {
+  mutex_unlock (&dir->lock);
   return EOPNOTSUPP;
 }
 
@@ -293,6 +294,7 @@ error_t
 netfs_attempt_create_file (struct iouser *user, struct node *dir,
 			   char *name, mode_t mode, struct node **np)
 {
+  mutex_unlock (&dir->lock);
   return EOPNOTSUPP;
 }
 
