@@ -24,6 +24,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <stddef.h>
 
 #include "lib.h"
 
@@ -37,7 +38,7 @@ struct mutex debug_msg_lock = MUTEX_INITIALIZER;
    in *DIRENT_LIST.  */
 error_t
 dir_entries_get (file_t dir, char **dirent_data, 
-		 int *dirent_data_size, struct dirent **dirent_list)
+		 size_t *dirent_data_size, struct dirent ***dirent_list)
 {
   error_t err;
   size_t data_size;
@@ -67,7 +68,7 @@ dir_entries_get (file_t dir, char **dirent_data,
 	}
       else
 	{
-	  munmap (data, date_size);
+	  munmap (data, data_size);
 	  err = ENOMEM;
 	}
     }

@@ -46,7 +46,8 @@
    *DIRENT_DATA_SIZE and a list of pointers to the dirent structures
    in *DIRENT_LIST.  */
 error_t dir_entries_get (file_t dir, char **dirent_data,
-			 int *dirent_data_size, struct dirent **dirent_list);
+			 size_t *dirent_data_size,
+			 struct dirent ***dirent_list);
 
 /* Lookup the file named NAME beneath DIR (or the cwd, if DIR is not a
    valid port.  Try to open with FLAGS0 first, and if that fails with

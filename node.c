@@ -249,7 +249,7 @@ node_entries_get (node_t *node, node_dirent_t **dirents)
 {
   struct dirent **dirent_list, **dirent;
   node_dirent_t *node_dirent_list = NULL;
-  int dirent_data_size;
+  size_t dirent_data_size;
   char *dirent_data;
   error_t err = 0;
 
