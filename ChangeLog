@@ -1,0 +1,4 @@
+2002-12-08  Moritz Schulte  <moritz@duesseldorf.ccc.de>
+
+	* node.c (node_create_root): call lnode_destroy, if node_create
+	failed, not if lnode_create failed.  Reported by Richard Smith.
