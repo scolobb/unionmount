@@ -113,8 +113,6 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
     case OPT_UNDERLYING:	/* --underlying  */
     case ARGP_KEY_ARG:
 
-      fprintf (stderr, "adding %s\n", arg);
-
       if (ulfs_remove)
 	{
 	  err = ulfs_unregister (arg);

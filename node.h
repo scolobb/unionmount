@@ -80,6 +80,10 @@ void node_destroy (node_t *node);
    which must be locked, are uptodate.  */
 error_t node_update (node_t *node);
 
+/* Remove all files named NAME beneath DIR on the underlying filesystems
+   with FLAGS as openflags.  */
+error_t node_unlink_file (node_t *dir, char *name);
+
 /* Lookup a file named NAME beneath DIR on the underlying filesystems
    with FLAGS as openflags.  Return the first port successfully looked
    up in *PORT and according stat information in *STAT.  */
@@ -114,5 +118,10 @@ error_t node_init_root (node_t *node);
   for (node_ulfs_t *node_ulfs = (node)->nn->ulfs;     \
        node_ulfs < (node)->nn->ulfs + (node)->nn->ulfs_num;  \
        node_ulfs++)
+
+#define node_ulfs_iterate_reverse_unlocked(node)			\
+  for (node_ulfs_t *node_ulfs = (node)->nn->ulfs + (node)->nn->ulfs_num - 1;\
+       node_ulfs >= (node)->nn->ulfs;					\
+       node_ulfs--)
 
 #endif

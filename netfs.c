@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2005 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -234,7 +234,17 @@ error_t
 netfs_attempt_unlink (struct iouser *user, struct node *dir,
 		      char *name)
 {
-  return EOPNOTSUPP;
+  error_t err = 0;
+
+  node_update (dir);
+
+  err = fshelp_access (&dir->nn_stat, S_IWRITE, user);
+  if (err)
+    return err;
+
+  err = node_unlink_file (dir, name);
+
+  return err;
 }
 
 /* Attempt to rename the directory FROMDIR to TODIR. Note that neither
@@ -296,6 +306,77 @@ netfs_attempt_create_file (struct iouser *user, struct node *dir,
 {
   mutex_unlock (&dir->lock);
   return EOPNOTSUPP;
+}
+
+/* We use this local interface to attempt_create file since we are
+   using our own netfs_S_dir_lookup.  */
+error_t
+netfs_attempt_create_file_reduced (struct iouser *user, struct node *dir,
+				   char *name, mode_t mode, int flags)
+{
+  mach_port_t p;
+  error_t err;
+  struct stat statbuf;
+
+  node_update (dir);
+
+  err = fshelp_access (&dir->nn_stat, S_IWRITE, user);
+  if (err)
+    goto exit;
+
+  /* Special case for no UID processes (like login shell) */
+  if ((!user->uids->ids) || (!user->uids->ids))
+    {
+      err = EACCES;
+      goto exit;
+    }
+  
+  mutex_unlock (&dir->lock);
+  err = node_lookup_file (dir, name, flags | O_CREAT, 
+			  &p, &statbuf);
+  mutex_lock (&dir->lock);
+
+  if (err)
+    goto exit;
+
+  err = file_chmod (p, mode);
+  if (err)
+    {
+      port_dealloc (p);
+      node_unlink_file (dir, name);
+      goto exit;
+    }
+
+  err = file_chown (p, user->uids->ids[0], user->gids->ids[0]);
+  if (err)
+    {
+      port_dealloc (p);
+      node_unlink_file (dir, name);
+      goto exit;
+    }
+
+  err = io_stat (p, &statbuf);
+
+  /* Check file permissions.  */
+  if (! err && (flags & O_READ))
+    err = fshelp_access (&statbuf, S_IREAD, user);
+  if (! err && (flags & O_WRITE))
+    err = fshelp_access (&statbuf, S_IWRITE, user);
+  if (! err && (flags & O_EXEC))
+    err = fshelp_access (&statbuf, S_IEXEC, user);
+  
+  if (err)
+    {
+      port_dealloc (p);
+      node_unlink_file (dir, name);
+      goto exit;
+    }
+
+  port_dealloc (p);
+  
+ exit:
+  mutex_unlock (&dir->lock);
+  return err;
 }
 
 /* Read the contents of locked node NP (a symlink), for USER, into
@@ -389,26 +470,35 @@ netfs_attempt_lookup_improved (struct iouser *user, struct node *dir,
   mutex_lock (&dir->nn->lnode->lock);
 
   err = fshelp_access (&dir->nn_stat, S_IEXEC, user);
-  if ((! err) && (! *name || ! strcmp (name, ".")))
+  if (err)
+      goto exit;
+  
+
+  if (! *name || ! strcmp (name, "."))
     {
+
       /* The same node is wanted.  */
       *np = dir;
       netfs_nref (*np);
+
     }
-  else if ((! err) && (! strcmp (name, "..")))
+  else if (! strcmp (name, ".."))
     {
+
       /* We have to get the according light node first.  */
       lnode_t *lnode = dir->nn->lnode;
       node_t *node;
 
       err = ncache_node_lookup (lnode->dir, &node);
-      if (! err)
-	{
-	  *np = node;
-	}
+      if (err)
+	goto exit;
+	      
+      *np = node;
+      
     }
-  else if (! err)
+  else 
     {
+
       lnode_t *dir_lnode = dir->nn->lnode;
       struct stat statbuf;
       lnode_t *lnode = NULL;
@@ -421,13 +511,18 @@ netfs_attempt_lookup_improved (struct iouser *user, struct node *dir,
       /* We have to unlock this node while doing lookups.  */
       mutex_unlock (&dir_lnode->lock);
       mutex_unlock (&dir->lock);
-      if (! err)
-	err = node_lookup_file (dir, name, flags & ~O_NOLINK,
-				&p, &statbuf);
+
+      err = node_lookup_file (dir, name, flags & ~(O_NOLINK|O_CREAT),
+			      &p, &statbuf);
+
       mutex_lock (&dir->lock);
       mutex_lock (&dir_lnode->lock);
 
-      if ((! err) && S_ISDIR (statbuf.st_mode))
+
+      if (err)
+	goto exit;
+
+      if (S_ISDIR (statbuf.st_mode))
 	{
 	  node_t *node;
 
@@ -441,54 +536,70 @@ netfs_attempt_lookup_improved (struct iouser *user, struct node *dir,
 	  if (err == ENOENT)
 	    {
 	      /* It does not exist, we have to create it.  */
-	      
 	      err = lnode_create (name, &lnode);
-	      if (! err)
-		lnode_install (dir_lnode, lnode);
+	      if (err)
+		goto exit;
+	      
+	      lnode_install (dir_lnode, lnode);
 	    }
+	  
+	  /* Now we have a light node.  */
+	  err = ncache_node_lookup (lnode, &node);
+	  
+	  /* This unlocks the node for us.  */
+	  lnode_ref_remove (lnode);
 
-	  if (! err)
-	    /* Now we have a light node.  */
-	    err = ncache_node_lookup (lnode, &node);
-
-	  if (lnode)
-	    /* This unlocks the node for us.  */
-	    lnode_ref_remove (lnode);
-
-	  if (! err)
-	    {
-	      /* Got the node.  */
-	      *np = node;
-	    }
+	  if (err)
+	      goto exit;
+	  
+	  /* Got the node.  */
+	  *np = node;
+	  
 	}
-      else if (! err)
+      else 
 	{
 	  /* The found node is not a directory.  */
+	  mach_port_t p_restricted;
+
 	  if (! lastcomp)
 	    {
 	      /* We have not reached the last path component yet.  */
 	      port_dealloc (p);
 	      err = ENOTDIR;
+	      goto exit;
 	    }
-	  if (! err)
-	    {
-	      mach_port_t p_restricted;
 
-	      /* A file node is successfully looked up.  */
-	      err = io_restrict_auth (p, &p_restricted,
-				      user->uids->ids, user->uids->num,
-				      user->gids->ids, user->gids->num);
+	  /* Check file permissions.  */
+	  if (! err && (flags & O_READ))
+	    err = fshelp_access (&statbuf, S_IREAD, user);
+	  if (! err && (flags & O_WRITE))
+	    err = fshelp_access (&statbuf, S_IWRITE, user);
+	  if (! err && (flags & O_EXEC))
+	    err = fshelp_access (&statbuf, S_IEXEC, user);
+
+	  if (err)
+	    {
 	      port_dealloc (p);
-	      if (! err)
-		{
-		  /* Successfully restricted.  */
-		  *port = p_restricted;
-		  *port_type = MACH_MSG_TYPE_MOVE_SEND;
-		}
+	      goto exit;
 	    }
+
+
+	  /* A file node is successfully looked up.  */
+	  err = io_restrict_auth (p, &p_restricted,
+				  user->uids->ids, user->uids->num,
+				  user->gids->ids, user->gids->num);
+	  port_dealloc (p);
+	  
+	  if (err)
+	    goto exit;
+	  
+	  /* Successfully restricted.  */
+	  *port = p_restricted;
+	  *port_type = MACH_MSG_TYPE_MOVE_SEND;
 	}
     }
-
+  
+ exit: 
 
   if (err)
     *np = NULL;
@@ -531,7 +642,7 @@ netfs_S_dir_lookup (struct protid *diruser,
   int nsymlinks = 0;
   struct node *dnp, *np;
   char *nextname;
-  error_t error;
+  error_t error = 0;
   struct protid *newpi;
   struct iouser *user;
 
@@ -633,34 +744,37 @@ netfs_S_dir_lookup (struct protid *diruser,
       else
 	/* Attempt a lookup on the next pathname component. */
 	error = netfs_attempt_lookup_improved (diruser->user, dnp,
-					       filename, &np, flags, lastcomp,
+					       filename, &np, 
+					       flags, lastcomp,
 					       retry_port, retry_port_type);
-
+      
       /* At this point, DNP is unlocked */
-
+      
       /* Implement O_EXCL flag here */
       if (lastcomp && create && excl && !error && np)
 	error = EEXIST;
-
+      
       /* Create the new node if necessary */
       if (lastcomp && create && error == ENOENT)
 	{
 	  mode &= ~(S_IFMT | S_ISPARE | S_ISVTX);
 	  mode |= S_IFREG;
 	  mutex_lock (&dnp->lock);
-	  /* FIXME, new interface needed!  */
-	  error = netfs_attempt_create_file (diruser->user, dnp,
-					     filename, mode, &np);
 
-	  /* If someone has already created the file (between our lookup
-	     and this create) then we just got EEXIST.  If we are
-	     EXCL, that's fine; otherwise, we have to retry the lookup. */
-	  if (error == EEXIST && !excl)
+	  error = netfs_attempt_create_file_reduced (diruser->user, dnp,
+						     filename, mode, flags);
+
+	  /* We retry lookup in two cases:
+	     - we created the file and we have to get a valid port;
+	     - someone has already created the file (between our lookup
+	     and this create) then we just got EEXIST.  If we are EXCL, 
+	     that's fine; otherwise, we have to retry the lookup.  */
+	    if ((!error) || (error == EEXIST && !excl))
 	    {
 	      mutex_lock (&dnp->lock);
 	      goto retry_lookup;
 	    }
-
+	  
 	  newnode = 1;
 	}
 

@@ -1,3 +1,19 @@
+2005-05-24  Gianluca Guida  <glguida@gmail.com>
+
+	* netfs.c (netfs_attempt_unlink): Implemented.
+	(netfs_attempt_create_file_reduced): New function.
+	(netfs_S_dir_lookup): Initialized variable "error".
+	Added support for file creation.
+	(netfs_attempt_lookup_improved): Changed instruction flow,
+	return on error not continue on non-error.
+	Check user permission to open file before returning port.
+	* node.c (node_create, node_update, node_lookup_file, node_ulfs_free)
+	(node_ulfs_init, node_entries_get, node_create_root, node_init_root):
+	Changed instruction flow, return on error not continue on non-error.
+	(node_unlink_file): New function.
+	* node.h (node_unlink_file): New declaration.
+	(node_ulfs_iterate_reverse_unlocked): New macro.
+
 2005-01-31  Gianluca Guida  <glguida@gmail.com>
 
 	* stow.c (stow_diradd): Handle --stow argument with missing / 
