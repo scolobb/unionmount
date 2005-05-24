@@ -14,6 +14,8 @@
 	* node.h (node_unlink_file): New declaration.
 	(node_ulfs_iterate_reverse_unlocked): New macro.
 
+	* options.c (argp_parse_common_options): Removed debugging fprintf.
+	
 2005-01-31  Gianluca Guida  <glguida@gmail.com>
 
 	* stow.c (stow_diradd): Handle --stow argument with missing / 
