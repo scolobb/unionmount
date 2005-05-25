@@ -1,2 +1,21 @@
-This is an `unionfs' server for the Hurd.  The semantics are similar
-to BSD's unionfs.
+This is an `unionfs' translator for the Hurd. It is simple, but it is 
+definitely not a joke.
+
+It works by keeping in memory a dynamically updated tree of nodes, each 
+node representing a directory in the unionfs. A node contains an array 
+of ports that give access to the corrisponding directory in the underlying
+filesystems.
+
+On lookup, the first entry found is chosen. Thus, it is very important the
+underlying filesystems ordering, since the first underlying filesystem will
+be the first one to be searched during lookups, and it is the filesystem
+where new files and directories are written into.
+
+At the moment, underlying filesystem ordering is set by option ordering.
+
+See CAVEAT for other unexpected behaviour that could happen.
+
+The unionfs translator was originally written by Moritz Schulte 
+<moritz@duesseldorf.ccc.de> and currently mantained by Gianluca Guida 
+<glguida@gmail.com>.
+

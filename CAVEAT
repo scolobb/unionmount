@@ -1,0 +1,25 @@
+While using unionfs, you could experience more permission errors or 
+difficult or impossible file or directory deletion. This is a list of
+things that can happen.
+
+WARNINGS:
+
+- If the translator is run as by an unpriviledged user, other users will fail
+to create files or directory, since the translator won't be able to change
+the ownership of the file.
+
+
+PROBLEMS:
+
+- If there's a name conflict in underlying filesystems between directories 
+and files -- say that "foo" is a directory in underlying filesystem "a" while
+is a file in the underlying filesystem "b" -- then unionfs will be unable to
+delete this entry. This is a structural BUG (there's no clean way to solve it),
+and should be fixed.
+
+- If there's a name conflict in underlying filesystems between directories
+(or between files), and the user has not permission to delete _ALL_ the 
+entries -- e.g. one hidden entry is read-only -- then he will get an EPERM
+even if permissions seems ok. This is a structural BUG (there's no clean way
+to solve it), and should be fixed.
+
