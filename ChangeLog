@@ -14,6 +14,9 @@
 	* node.h (node_dir_create): New declaration.
 	(node_dir_remove): Likewise.
 
+	* lib.c (for_each_file_priv): Removed unused variables 
+	"name" and "filestat".
+
 2005-05-24  Gianluca Guida  <glguida@gmail.com>
 
 	* netfs.c (netfs_attempt_unlink): Implemented.
