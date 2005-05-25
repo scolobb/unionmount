@@ -183,6 +183,48 @@ node_update (node_t *node)
   return err;
 }
 
+/* Remove all directory named NAME beneath DIR on all underlying filesystems.
+   Fails if we cannot remove all the directories.  */
+error_t
+node_dir_remove (node_t *dir, char *name)
+{
+  error_t err = 0;
+
+  node_ulfs_iterate_reverse_unlocked (dir)
+    {
+      if (!port_valid (node_ulfs->port))
+	continue;
+
+      err = dir_rmdir (node_ulfs->port, name);
+
+      if ((err) && (err != ENOENT))
+	break;
+    }
+
+  return err;
+}
+
+/* Create a directory named NAME beneath DIR on the first (writable) underlying
+   filesystem.  */
+error_t
+node_dir_create (node_t *dir, char *name, mode_t mode)
+{
+  error_t err = 0;
+
+  node_ulfs_iterate_unlocked (dir)
+    {
+      if (!port_valid (node_ulfs->port))
+	continue;
+      
+      err = dir_mkdir (node_ulfs->port, name, mode);
+
+      if ((!err) || (err == EEXIST) || (err == ENOTDIR))
+	break;
+    }
+  
+  return err;
+}
+
 /* Remove all files named NAME beneath DIR on the underlying filesystems
    with FLAGS as openflags.  */
 error_t

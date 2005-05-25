@@ -235,10 +235,18 @@ netfs_attempt_unlink (struct iouser *user, struct node *dir,
 		      char *name)
 {
   error_t err = 0;
+  mach_port_t p;
+  struct stat statbuf;
 
   node_update (dir);
 
-  err = fshelp_access (&dir->nn_stat, S_IWRITE, user);
+  err = node_lookup_file (dir, name, 0, &p, &statbuf);
+  if (err)
+    return err;
+
+  port_dealloc (p);
+
+  err = fshelp_checkdirmod (&dir->nn_stat, &statbuf, user);
   if (err)
     return err;
 
@@ -263,7 +271,46 @@ error_t
 netfs_attempt_mkdir (struct iouser *user, struct node *dir,
 		     char *name, mode_t mode)
 {
-  return EOPNOTSUPP;
+  error_t err = 0;
+  mach_port_t p;
+  struct stat statbuf;
+
+  node_update (dir);
+
+  err = fshelp_checkdirmod (&dir->nn_stat, 0, user);
+  if (err)
+    goto exit;
+
+  /* Special case for no UID processes (like login shell).  */
+  if ((!user->uids->ids) || (!user->uids->ids))
+    {
+      err = EACCES;
+      goto exit;
+    }
+
+  err = node_dir_create (dir, name, mode);
+  if (err)
+    goto exit;
+
+  err = node_lookup_file (dir, name, 0, &p, &statbuf);
+  if (err)
+    {
+      node_dir_remove (dir, name);
+      goto exit;
+    }
+
+  err = file_chown (p, user->uids->ids[0], user->gids->ids[0]);
+  if (err)
+    {
+      port_dealloc (p);
+      node_dir_remove (dir, name);
+      goto exit;
+    }
+
+  port_dealloc (p);
+
+ exit:
+  return err;
 }
 
 /* Attempt to remove directory named NAME in DIR (which is locked) for
@@ -272,7 +319,25 @@ error_t
 netfs_attempt_rmdir (struct iouser *user, 
 		     struct node *dir, char *name)
 {
-  return EOPNOTSUPP;
+  error_t err = 0;
+  mach_port_t p;
+  struct stat statbuf;
+
+  node_update (dir);
+
+  err = node_lookup_file (dir, name, 0, &p, &statbuf);
+  if (err)
+    return err;
+
+  port_dealloc (p);
+
+  err = fshelp_checkdirmod (&dir->nn_stat, &statbuf, user);
+  if (err)
+    return err;
+
+  err = node_dir_remove (dir, name);
+
+  return err;
 }
 
 /* Create a link in DIR with name NAME to FILE for USER. Note that
@@ -320,11 +385,11 @@ netfs_attempt_create_file_reduced (struct iouser *user, struct node *dir,
 
   node_update (dir);
 
-  err = fshelp_access (&dir->nn_stat, S_IWRITE, user);
+  err = fshelp_checkdirmod (&dir->nn_stat, 0, user);
   if (err)
     goto exit;
 
-  /* Special case for no UID processes (like login shell) */
+  /* Special case for no UID processes (like login shell).  */
   if ((!user->uids->ids) || (!user->uids->ids))
     {
       err = EACCES;

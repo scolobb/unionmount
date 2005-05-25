@@ -1,3 +1,19 @@
+2005-05-25  Gianluca Guida  <glguida@gmail.com>
+
+	* CAVEAT: New file.
+	* README: Rewritten.
+
+	* netfs.c (netfs_attempt_unlink): Use fshelp_checkdirmod
+	instead of fshelp_access.
+	(netfs_attempt_mkdir): Implemented.
+	(netfs_attempt_rmdir): Likewise.
+	(netfs_attempt_create_file_reduced): Likewise.
+	Fixed typo in a comment.
+	* node.c (node_dir_remove): New function.
+	(node_dir_create): Likewise.
+	* node.h (node_dir_create): New declaration.
+	(node_dir_remove): Likewise.
+
 2005-05-24  Gianluca Guida  <glguida@gmail.com>
 
 	* netfs.c (netfs_attempt_unlink): Implemented.

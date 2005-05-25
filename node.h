@@ -80,6 +80,14 @@ void node_destroy (node_t *node);
    which must be locked, are uptodate.  */
 error_t node_update (node_t *node);
 
+/* Create a directory named NAME beneath DIR on all the (writable) underlying
+   filesystems.  */
+error_t node_dir_create (node_t *dir, char *name, mode_t mode);
+
+/* Remove all directory named NAME beneath DIR on all underlying filesystems.
+   Fails if we cannot remove all the directories.  */
+error_t node_dir_remove (node_t *dir, char *name);
+
 /* Remove all files named NAME beneath DIR on the underlying filesystems
    with FLAGS as openflags.  */
 error_t node_unlink_file (node_t *dir, char *name);
