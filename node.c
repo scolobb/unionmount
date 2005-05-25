@@ -196,7 +196,6 @@ node_dir_remove (node_t *dir, char *name)
 	continue;
 
       err = dir_rmdir (node_ulfs->port, name);
-
       if ((err) && (err != ENOENT))
 	break;
     }
@@ -244,9 +243,10 @@ node_unlink_file (node_t *dir, char *name)
 	continue;
       
       err = dir_unlink (node_ulfs->port, name);
-      
+      if ((err) && (err != ENOENT))
+	break;
     }
-  err = 0;
+
   return err;
 }
 
