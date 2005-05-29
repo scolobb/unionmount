@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -26,6 +26,10 @@
 #include <error.h>
 #include <string.h>
 
+#include "unionfs.h"
+#include <fcntl.h>
+
+#include "lib.h"
 #include "ulfs.h"
 
 /* The start of the ulfs chain.  */
@@ -65,7 +69,6 @@ ulfs_create (char *path, ulfs_t **ulfs)
 	  ulfs_new->flags = 0;
 	  ulfs_new->next = NULL;
 	  ulfs_new->prev = NULL;
-	  ulfs_new->prevp = NULL;
 	  *ulfs = ulfs_new;
 	}
     }
@@ -86,14 +89,9 @@ ulfs_install (ulfs_t *ulfs)
 {
   ulfs->next = ulfs_chain_start;
   ulfs->prev = NULL;
-  ulfs->prevp = &ulfs_chain_start;
-  if (ulfs_chain_start)
-    {
-      ulfs_chain_start->prev = ulfs;
-      ulfs_chain_start->prevp = &ulfs->next;
-    }
-  else
-    ulfs_chain_end = ulfs;
+
+  if (ulfs->next)
+    ulfs->next->prev = ulfs;
 
   ulfs_chain_start = ulfs;
 }
@@ -102,14 +100,14 @@ ulfs_install (ulfs_t *ulfs)
 void
 ulfs_uninstall (ulfs_t *ulfs)
 {
-  *ulfs->prevp = ulfs->next;
+  if (ulfs == ulfs_chain_start)
+      ulfs_chain_start = ulfs->next;
+
   if (ulfs->next)
-    {
-      ulfs->next->prev = ulfs->prev;
-      ulfs->next->prevp = &ulfs->next;
-    }
-  else
-    ulfs_chain_end = ulfs->prev;
+    ulfs->next->prev = ulfs->prev;
+
+  if (ulfs->prev)
+    ulfs->prev->next = ulfs->next;
 }
 
 /* Get an ulfs element by it's index.  */
@@ -128,6 +126,7 @@ ulfs_get_num (int num, ulfs_t **ulfs)
       err = 0;
       *ulfs = u;
     }
+
   return err;
 }
 
@@ -150,13 +149,49 @@ ulfs_get_path (char *path, ulfs_t **ulfs)
   return err;
 }
 
+error_t
+ulfs_for_each_under_priv (char *path_under,
+			  error_t (*func) (char *, char *, void *),
+			  void *priv)
+{
+  error_t err = 0;
+  ulfs_t *u;
+  size_t length;
+  
+  length = strlen (path_under);
+
+  for (u = ulfs_chain_start; u; u = u->next)
+    {
+      if (!u->path)
+	continue;
+
+      if (memcmp (u->path, path_under, length))
+	continue;
+
+      /* This ulfs is under path_under.  */
+      func ((char *)(u->path + length), path_under, priv);
+    }
+
+  return err;
+}
+
 /* Register a new underlying filesystem.  */
 error_t
 ulfs_register (char *path, int flags)
 {
   ulfs_t *ulfs;
   error_t err;
-  
+
+  if (path)
+    {
+      err = check_dir (path);
+      if (err)
+	{
+	  fprintf(stderr, "%s is not a directory\n", path);
+	  return err;
+	}
+    }
+
   mutex_lock (&ulfs_lock);
   err = ulfs_create (path, &ulfs);
   if (! err)
@@ -167,6 +202,67 @@ ulfs_register (char *path, int flags)
     }
   mutex_unlock (&ulfs_lock);
   return err;
+}
+
+/* Check for deleted ulfs entries.  */
+/* FIXME: Ugly as hell. Rewrite the whole ulfs.c  */
+void
+ulfs_check ()
+{
+  ulfs_t *u;
+  file_t p;
+
+  struct ulfs_destroy
+  {
+    ulfs_t *ulfs;
+
+    struct ulfs_destroy *next;
+  } *ulfs_destroy_q = NULL;
+
+  mutex_lock (&ulfs_lock);
+
+  u = ulfs_chain_start;
+  while (u)
+    {
+      
+      if (u->path)
+	p = file_name_lookup (u->path, O_READ | O_DIRECTORY, 0);
+      else
+	p = underlying_node;
+	  
+      if (! port_valid (p))
+	{
+	  struct ulfs_destroy *ptr;
+
+	  /* Add to destroy list.  */
+	  ptr = malloc (sizeof (struct ulfs_destroy));
+	  assert (ptr);
+
+	  ptr->ulfs = u;
+
+	  ptr->next = ulfs_destroy_q;
+	  ulfs_destroy_q = ptr;
+	}
+	  
+      u = u->next;
+    }
+
+  while (ulfs_destroy_q)
+    {
+      struct ulfs_destroy *ptr;
+
+      ptr = ulfs_destroy_q;
+      ulfs_destroy_q = ptr->next;
+
+      ulfs_uninstall (ptr->ulfs);
+      ulfs_destroy (ptr->ulfs);
+      ulfs_num--;	  
+
+      free (ptr);
+    }
+
+  mutex_unlock (&ulfs_lock);
+
 }
 
 /* Unregister an underlying filesystem.  */
@@ -185,5 +281,6 @@ ulfs_unregister (char *path)
       ulfs_num--;
     }
   mutex_unlock (&ulfs_lock);
+
   return err;
 }

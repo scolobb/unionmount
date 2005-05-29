@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -31,6 +31,22 @@
 /* Lock, which must be held, during printing of debugging
    messages.  */
 struct mutex debug_msg_lock = MUTEX_INITIALIZER;
+
+/* Returns no error if PATH points to a directory.  */
+error_t check_dir (char *path)
+{
+  struct stat filestat;
+  error_t err = 0;
+
+  err = stat (path, &filestat);
+  if (err)
+    return err;
+
+  if (!S_ISDIR (filestat.st_mode))
+    return ENOTDIR;
+
+  return 0;
+}
 
 /* Fetch directory entries for DIR; store the raw data as returned by
    the dir_readdir RPC in *DIRENT_DATA, the size of *DIRENT_DATA in

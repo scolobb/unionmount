@@ -64,8 +64,65 @@ netfs_append_args (char **argz, size_t *argz_len)
 			    OPT_LONG (OPT_LONG_UNDERLYING));
 	}
     }
+
   return err;
 }
+
+#ifndef __USE_FILE_OFFSET64
+#define OFFSET_T __off_t		/* Size in bytes.  */
+#else
+#define OFFSET_T __off64_t		/* Size in bytes.  */
+#endif
+
+static error_t
+_get_node_size (struct node *dir, OFFSET_T *off)
+{
+  size_t size = 0;
+  error_t err;
+  int count = 0;
+  node_dirent_t *dirent_start, *dirent_current;
+  node_dirent_t *dirent_list = NULL;
+  int first_entry = 2;
+  
+  int bump_size (const char *name)
+    {
+      size_t new_size = size + DIRENT_LEN (strlen (name));
+      
+      size = new_size;
+      count ++;
+      return 1;
+    }
+  
+  err = node_entries_get (dir, &dirent_list);
+  if (err)
+    return err;
+  
+  for (dirent_start = dirent_list, count = 2;
+       dirent_start && first_entry > count;
+       dirent_start = dirent_start->next, count++);
+  
+  count = 0;
+  
+  /* Make space for the `.' and `..' entries.  */
+  if (first_entry == 0)
+    bump_size (".");
+  if (first_entry <= 1)
+    bump_size ("..");
+  
+  /* See how much space we need for the result.  */
+  for (dirent_current = dirent_start;
+       dirent_current;
+       dirent_current = dirent_current->next)
+    if (! bump_size (dirent_current->dirent->d_name))
+      break;
+
+  free (dirent_list);
+
+  *off = size;
+
+  return 0;
+}
+
 
 /* Make sure that NP->nn_stat is filled with current information.
    CRED identifies the user responsible for the operation. */
@@ -94,6 +151,11 @@ netfs_validate_stat (struct node *np, struct iouser *cred)
 	    err = ENOENT;	/* FIXME?  */
 	}
     }
+  else 
+    {
+      _get_node_size (np, &np->nn_stat.st_size); 
+    }
+
   return err;
 }
 
@@ -242,13 +304,13 @@ netfs_attempt_unlink (struct iouser *user, struct node *dir,
 
   err = node_lookup_file (dir, name, 0, &p, &statbuf);
   if (err)
-    return err;
+      return err;
 
   port_dealloc (p);
 
   err = fshelp_checkdirmod (&dir->nn_stat, &statbuf, user);
   if (err)
-    return err;
+      return err;
 
   err = node_unlink_file (dir, name);
 
@@ -310,6 +372,7 @@ netfs_attempt_mkdir (struct iouser *user, struct node *dir,
   port_dealloc (p);
 
  exit:
+
   return err;
 }
 
@@ -327,13 +390,13 @@ netfs_attempt_rmdir (struct iouser *user,
 
   err = node_lookup_file (dir, name, 0, &p, &statbuf);
   if (err)
-    return err;
+      return err;
 
   port_dealloc (p);
 
   err = fshelp_checkdirmod (&dir->nn_stat, &statbuf, user);
   if (err)
-    return err;
+      return err;
 
   err = node_dir_remove (dir, name);
 

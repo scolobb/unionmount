@@ -1,3 +1,61 @@
+2005-05-29  Gianluca Guida  <glguida@gmail.com>
+
+	* Makefile: Added support for building mig stubs for stow feature.
+	(OBJS): Added update.o
+	(unionfs): Added fs_notifyServer.o to final linking.
+	(unionfs.static): Likewise.
+	(fs_notifyServer.o): New rule.
+	(clean): Remove fs_notifyServer.c and fs_notify_S.h when cleaning.
+
+	* netfs.c (OFFSET_T): New macro.
+	(_get_node_size): New function.
+	(netfs_validate_stat): Call _get_node_size for root node.
+
+	* node.c (node_unlink_file): New variable "removed". Return ENOENT
+	if no files unlinked.
+	
+	* ulfs.c: Include "unionfs", fcntl.h and "lib.h".
+	(ulfs_install, ulfs_uninstall): Rewritten.
+	(ulfs_for_each_under_priv, ulfs_check): New function.
+	(ulfs_register): Check that argument is a directory.
+	* ulfs.h: Removed field "prevp" from struct ulfs.
+	(ulfs_check): New declaration.
+	(ulfs_iterate, ulfs_iterate_unlocked): Don't use ulfs_chain_end.
+	* lib.c (check_dir): New function.
+	* lib.h: Added declaration of check_dir.
+	
+	* stow.c: Include "update.h", cthreads.h, hurd/port.h,
+	"stow-priv.h" and "ncache.h".
+	(stow_privdata) Added "lock" to struct. Removed "remove" to
+	struct.
+	(_stow_registermatchingdirs): Removed call to
+	debug_msg_send. Removed call to ulfs_unregister when
+	privdata->remove is set. Return error on ulfs_register failure
+	instead of exiting the program.
+	(_stow_scanstowentry): Removed call to ulfs_unregister when
+	privdata->remove is set. Lock privdata->lock and unlock at end.
+	(stow_port_bucket, stow_port_class): New variables.
+	(_stow_notify_init, begin_using_notify_ports)
+	(end_using_notify_ports, stow_S_file_changed, stow_S_dir_changed)
+	(_stow_notify_thread, stow_init): New functions.
+	(stow_diradd): Allocate "mypriv" instead of using stack.  Call
+	_stow_notify_init.
+	* stow.h: Include "pattern.h".  Declare
+	stow_init.  
+
+	* stow-priv.h: New file.  
+	* stow-mutations.h: Likewise.
+	* update.c: Likewise.
+	* update.h: Likewise.
+
+	* options.c: Include "update.h".
+	(argp_parse_common_options): Check stow_diradd return. Call
+	root_update_schedule instead of node_init_root and ncache_reset
+	when parsing_startup_options_finished is set.
+
+	* main.c: Include "stow.h". Include "update.h".
+	(main): Call stow_init. Call root_update_init.
+
 2005-05-25  Gianluca Guida  <glguida@gmail.com>
 
 	* CAVEAT: New file.
@@ -94,6 +152,6 @@
 	* node.c (node_create_root): call lnode_destroy, if node_create
 	failed, not if lnode_create failed.  Reported by Richard Smith.
 
-  Copyright 2002, 2003 Free Software Foundation, Inc.
+  Copyright 2002, 2003, 2005 Free Software Foundation, Inc.
   Copying and distribution of this file, with or without modification, are
   permitted provided the copyright notice and this notice are preserved.

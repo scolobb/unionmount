@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -32,6 +32,7 @@
 #include "version.h"
 #include "pattern.h"
 #include "stow.h"
+#include "update.h"
 
 /* This variable is set to a non-zero value after parsing of the
    startup options.  Whenever the argument parser is later called to
@@ -103,8 +104,9 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       break;
 
     case OPT_STOW:		/* --stow */
-      stow_diradd (arg, ulfs_flags, &ulfs_patternlist, ulfs_remove);
-
+      err = stow_diradd (arg, ulfs_flags, &ulfs_patternlist, ulfs_remove);
+      if (err)
+	error (EXIT_FAILURE, err, "stow_diradd");
       ulfs_modified = 1;
       ulfs_flags = ulfs_remove = 0;
       ulfs_match = 0;
@@ -134,12 +136,14 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       ulfs_flags = ulfs_remove = 0;
       if (ulfs_modified && parsing_startup_options_finished)
 	{
-	  err = node_init_root (netfs_root_node);
-	  if (err)
-	    error (EXIT_FAILURE, err, "failed to initialize root node");
+	  root_update_schedule ();
 	}
-      ncache_reset ();
+      else
+	{
+	  ncache_reset ();
+	}
       ulfs_modified = 0;
+
       if (! parsing_startup_options_finished)
 	parsing_startup_options_finished = 1;
       break;

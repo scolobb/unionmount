@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -61,6 +61,9 @@ error_t for_each_subdir_priv (char *, error_t (*) (char *, char *, void *),
    according stat information are stored in *STAT.  */
 error_t file_lookup (file_t dir, char *name, int flags0, int flags1, int mode,
 		     file_t *port, struct stat *stat);
+
+/* Returns no error if directory.  */
+error_t check_dir (char *path);
 
 extern struct mutex debug_msg_lock;
 

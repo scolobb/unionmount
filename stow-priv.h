@@ -17,14 +17,29 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
    USA.  */
 
-/* Stow mode for unionfs.  */
+#ifndef __STOW_PRIVDATA_H__
+#define __STOW_PRIVDATA_H__
 
-#ifndef _STOW_H
-#define _STOW_H
+#include <hurd/ports.h>
 
-#include "pattern.h"
+struct stow_notify
+{
+  struct port_info pi;
 
-error_t stow_init (void);
-error_t stow_diradd (char *, int, struct patternlist *, int);
+  char *dir_name;
+  struct stow_privdata *priv;
+};
+typedef struct stow_notify *stow_notify_t;
 
-#endif /* _STOW_H  */
+
+/* Called by MiG to translate ports into stow_notify_t.  mutations.h
+   arranges for this to happen for the fs_notify interfaces. */
+stow_notify_t begin_using_notify_port (fs_notify_t port);
+
+
+/* Called by MiG after server routines have been run; this balances
+   begin_using_notify_port, and is arranged for the fs_notify
+   interfaces by mutations.h. */
+void end_using_notify_port (stow_notify_t cred);
+
+#endif /* STOW_PRIVDATA_H */

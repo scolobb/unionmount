@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@ typedef struct ulfs
 {
   char *path;
   int flags;
-  struct ulfs *next, *prev, **prevp;
+  struct ulfs *next, *prev;
 } ulfs_t;
 
 /* Flags.  */
@@ -60,15 +60,18 @@ error_t ulfs_get_num (int num, ulfs_t **ulfs);
 /* Get an ulfs element by the associated path.  */
 error_t ulfs_get_path (char *path, ulfs_t **ulfs);
 
+/* Removes invalid ulfs entries.  */
+void ulfs_check (void);
+
 #define ulfs_iterate                             \
   for (ulfs_t *ulfs = (mutex_lock (&ulfs_lock),  \
-		       ulfs_chain_end);          \
+		       ulfs_chain_start);          \
        ulfs || (mutex_unlock (&ulfs_lock), 0);   \
-       ulfs = ulfs->prev) 
+       ulfs = ulfs->next) 
 
 #define ulfs_iterate_unlocked                    \
-  for (ulfs_t *ulfs = ulfs_chain_end;            \
+  for (ulfs_t *ulfs = ulfs_chain_start;            \
        ulfs;                                     \
-       ulfs = ulfs->prev)
+       ulfs = ulfs->next)
 
 #endif

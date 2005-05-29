@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -28,13 +28,14 @@
 #include <unistd.h>
 
 #include "version.h"
-
 #include "unionfs.h"
 #include "ncache.h"
 #include "ulfs.h"
 #include "lnode.h"
 #include "node.h"
 #include "options.h"
+#include "stow.h"
+#include "update.h"
 
 char *netfs_server_name = "unionfs";
 char *netfs_server_version = HURD_VERSION;
@@ -66,6 +67,12 @@ main (int argc, char **argv)
 {
   mach_port_t bootstrap_port;
   error_t err = 0;
+
+  root_update_init ();
+
+  err = stow_init();
+  if (err)
+    error (EXIT_FAILURE, err, "failed to initialize stow support");
 
   /* Argument parsing.  */
   argp_parse (&argp_startup, argc, argv, ARGP_IN_ORDER, 0, 0);
@@ -104,15 +111,15 @@ main (int argc, char **argv)
   netfs_root_node->nn_stat.st_mode = S_IFDIR | (underlying_node_stat.st_mode
 						& ~S_IFMT & ~S_ITRANS);
   netfs_root_node->nn_translated = netfs_root_node->nn_stat.st_mode;
-
+  
   /* If the underlying node isn't a directory, enhance the stat
      information.  */
   if (! S_ISDIR (underlying_node_stat.st_mode))
     {
       if (underlying_node_stat.st_mode & S_IRUSR)
-	netfs_root_node->nn_stat.st_mode |= S_IXUSR;
+	netfs_root_node->nn_stat.st_mode |= S_IRUSR;
       if (underlying_node_stat.st_mode & S_IRGRP)
-	netfs_root_node->nn_stat.st_mode |= S_IXGRP;
+	netfs_root_node->nn_stat.st_mode |= S_IRGRP;
       if (underlying_node_stat.st_mode & S_IROTH)
 	netfs_root_node->nn_stat.st_mode |= S_IXOTH;
     }

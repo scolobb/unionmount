@@ -17,14 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
    USA.  */
 
-/* Stow mode for unionfs.  */
+#ifndef _UDPATE_H
+#define _UPDATE_H
 
-#ifndef _STOW_H
-#define _STOW_H
+void root_update_schedule ();
+void root_update_disable ();
+void root_update_enable ();
+void root_update_init ();
 
-#include "pattern.h"
-
-error_t stow_init (void);
-error_t stow_diradd (char *, int, struct patternlist *, int);
-
-#endif /* _STOW_H  */
+#endif /* UPDATE_H */

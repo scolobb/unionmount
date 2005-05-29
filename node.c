@@ -230,6 +230,7 @@ error_t
 node_unlink_file (node_t *dir, char *name)
 {
   error_t err = 0;
+  int removed = 0;
 
   /* Using reverse iteration still have issues. Infact, we could be
      deleting a file in some underlying filesystem, and keeping those
@@ -245,7 +246,16 @@ node_unlink_file (node_t *dir, char *name)
       err = dir_unlink (node_ulfs->port, name);
       if ((err) && (err != ENOENT))
 	break;
+
+      if (!err)
+	removed++;
+
+      /* Ignore ENOENT.  */
+      err = 0;
     }
+
+  if (!removed)
+    err = ENOENT;
 
   return err;
 }
@@ -482,6 +492,7 @@ node_create_root (node_t **root_node)
 
 /* Initialize the ports to the underlying filesystems for the root
    node.  */
+
 error_t
 node_init_root (node_t *node)
 {
@@ -490,7 +501,7 @@ node_init_root (node_t *node)
   int i = 0;
 
   mutex_lock (&ulfs_lock);
-  
+
   err = node_ulfs_init (node);
   if (err)
     {
@@ -506,7 +517,7 @@ node_init_root (node_t *node)
 
       err = ulfs_get_num (i, &ulfs);
       if (err)
-	break;
+	  break;
 
       if (ulfs->path)
 	node_ulfs->port = file_name_lookup (ulfs->path,
