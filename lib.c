@@ -185,18 +185,22 @@ for_each_subdir (char *path, error_t (*func) (char *, char *))
 
       err = stat (name, &filestat);
 
-      if (err)
-	return err;
-
       free (name);
+
+      if (err)
+	{
+	  fprintf (stderr, "unionfs: couldn't stat %s%s\n",
+		   path, (*dirent)->d_name);
+	  continue;
+	}
 
       if (!S_ISDIR(filestat.st_mode))
 	continue;
  
-      err = func ((*dirent)->d_name, path);
+      func ((*dirent)->d_name, path);
     }
 
-  return err;
+  return 0;
 }
 
 error_t
@@ -228,10 +232,14 @@ for_each_subdir_priv (char *path, error_t (*func) (char *, char *, void *),
 
       err = stat (name, &filestat);
 
-      if (err)
-	return err;
-
       free (name);
+
+      if (err)
+	{
+	  fprintf (stderr, "unionfs: couldn't stat %s%s\n",
+		   path, (*dirent)->d_name);
+	  continue;
+	}
 
       if (!S_ISDIR(filestat.st_mode))
 	continue;
@@ -239,7 +247,7 @@ for_each_subdir_priv (char *path, error_t (*func) (char *, char *, void *),
       func ((*dirent)->d_name, path, priv);
     }
 
-  return err;
+  return 0;
 }
 
 error_t

@@ -40,22 +40,23 @@ struct stow_privdata
 static error_t
 _stow_registermatchingdirs (char *arg, char *dirpath, void *priv)
 {
-  error_t err=0;
+  error_t err = 0;
   char *filepath;
 
   struct stow_privdata *privdata = (struct stow_privdata *) priv ;
 
   err = patternlist_match (privdata->patternlist, arg);
   if (err)
-    return err;
+    return 0; /* It doesn't match. This is not an error.  */
 
   filepath = make_filepath (dirpath, arg);
 
   err = ulfs_register (filepath, privdata->flags);
+
+  free (filepath);
+
   if (err)
     return err;
-  
-  free (filepath);
   
   return 0;
 }
@@ -135,10 +136,10 @@ _stow_notify_init(char *dir_name, void *priv)
   stow_notify_port->priv = priv;
 
   dir_port = file_name_lookup (dir_name, 0, 0); 
+
   if (!port_valid (dir_port))
-    {
       return ENOENT; /* ? */
-    }
+
 
   notify_port = ports_get_right (stow_notify_port);
 

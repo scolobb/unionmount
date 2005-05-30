@@ -1,5 +1,78 @@
-This is an `unionfs' translator for the Hurd. It is simple, but it is 
-definitely not a joke.
+This is the unionfs translator for the GNU Hurd.
+
+The unionfs translator was originally written by Moritz Schulte 
+<moritz@duesseldorf.ccc.de> and currently mantained by Gianluca Guida 
+<glguida@gmail.com>.
+
+
+
+Introduction.
+
+An unionfs is a filesystems that joins many filesystems into one, meaning
+that you can see into an "unionfs" all files contained in the filesystems 
+that are part of the union.
+
+When two or more directories with the same path are found in different 
+filesystems, their content is joined.
+When two or more files with the same path are found in different filesystems,
+unionfs has to solve this conflict. See below (Internals section) for
+information on what this implementation does in such case.
+
+Example:
+To join "foo/" "bar/" and "baz/" in the directory "quux/", just do:
+
+   settrans -capfg quux/ /hurd/unionfs foo/ bar/ baz/
+
+If you want to join even quux/ contents in the union itself, add -u as a
+translator argument.
+You can add filesystems at run-time with the fsysopts command.
+
+
+
+Stowing feature.
+
+This unionfs implements stowing feature, i.e. the translator will watch a 
+directory, called 'stow', that contains the directories to unite.
+When a directory is added or removed in the stow, it will be added to or 
+removed from the unionfs.
+
+Example:
+To use "/stow" as the stow for the directory "foo/", do:
+
+   settrans -capfg foo/ /hurd/unionfs --stow=/stow
+
+All directories contained in /stow/ will then be joined together in foo/;
+you can delete or add directory at run-time and you will see unionfs adding
+or removing files in foo/ automatically.
+
+Another interesting feature of stow support of unionfs is the pattern matching
+option.
+For example, by using:
+
+   settrans -capfg foo/ /hurd/unionfs -m bar --stow=/stow
+
+You will get joined in foo/ all sub-sub-directories of /stow matching "bar", 
+i.e. /stow/*/bar/; pattern matching will be done too in run-time added stow
+subdirectories.
+Furthermore, you can specify more complex matching pattern to the option, 
+like -m bar\* (to get all stow's sub-sub-directories beginning with "bar")
+or specify multiple -m options.
+
+Example:
+This command
+
+   settrans -capfg /myfaketree/bin -m bin -m sbin --stow=/stow
+
+will join in /myfaketree/bin all files that are in /stow/*/bin and
+/stow/*/sbin. It is equivalent to:
+
+   settrans -capfg /myfaketree/bin -m [s]bin --stow=/stow
+
+
+
+Internals.
+
+This `unionfs' translator is simple, but it is definitely not a joke.
 
 It works by keeping in memory a dynamically updated tree of nodes, each 
 node representing a directory in the unionfs. A node contains an array 
@@ -15,7 +88,5 @@ At the moment, underlying filesystem ordering is set by option ordering.
 
 See CAVEAT for other unexpected behaviour that could happen.
 
-The unionfs translator was originally written by Moritz Schulte 
-<moritz@duesseldorf.ccc.de> and currently mantained by Gianluca Guida 
-<glguida@gmail.com>.
 
+Please send all bug reports to Gianluca Guida <glguida@gmail.com>.

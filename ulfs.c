@@ -186,10 +186,7 @@ ulfs_register (char *path, int flags)
     {
       err = check_dir (path);
       if (err)
-	{
-	  fprintf(stderr, "%s is not a directory\n", path);
 	  return err;
-	}
     }
 
   mutex_lock (&ulfs_lock);

@@ -67,7 +67,7 @@ const struct argp_option argp_startup_options[] =
     { 0 }
   };
 
-/* Argp parser function for the common oprtions.  */
+/* Argp parser function for the common options.  */
 error_t
 argp_parse_common_options (int key, char *arg, struct argp_state *state)
 {
@@ -199,7 +199,7 @@ const struct argp_child argp_children_startup[] =
 
 const char *argp_program_version = STANDARD_HURD_VERSION (unionfs);
 const char *argp_program_bug_address = 
-"Moritz Schulte <moritz@duesseldorf.ccc.de>";
+"Gianluca Guida <glguida@gmail.com>";
 
 #define ARGS_DOC "FILESYSTEMS ..."
 #define DOC      "Hurd unionfs server"

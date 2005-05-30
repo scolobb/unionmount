@@ -1,3 +1,20 @@
+2005-05-30  Gianluca Guida  <glguida@gmail.com>
+
+	* AUTHORS: Added myself in the list.
+	* README: Added sections "Introduction" and "Stowing Feature".
+	* options.c (argp_program_bug_address): Changed address.
+
+	* lib.c (for_each_subdir): When call to stat() fails continue free
+	"name" and continue the loop, instead of returning error. Return 0
+	at the end of the loop.
+	(for_each_subdir_priv): Likewise.
+
+	* stow.c (_stow_registermatchingdirs): Don't return error when
+	patternlist_match return false. Free filepath before returning
+	error when ulfs_register fails.
+
+	* ulfs.c (ulfs_register): Removed bogus fprintf.
+	
 2005-05-29  Gianluca Guida  <glguida@gmail.com>
 
 	* Makefile: Added support for building mig stubs for stow feature.
