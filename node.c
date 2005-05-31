@@ -229,6 +229,8 @@ node_dir_create (node_t *dir, char *name, mode_t mode)
 error_t
 node_unlink_file (node_t *dir, char *name)
 {
+  mach_port_t p;
+  struct stat stat;
   error_t err = 0;
   int removed = 0;
 
@@ -243,6 +245,21 @@ node_unlink_file (node_t *dir, char *name)
       if (!port_valid (node_ulfs->port))
 	continue;
       
+      err = file_lookup (node_ulfs->port, name,
+			 O_NOTRANS, O_NOTRANS,
+			 0, &p, &stat);
+
+      port_dealloc (p);
+
+      if (err == ENOENT)
+	{
+	  err = 0;
+	  continue;
+	}
+      
+      if (err)
+	break;
+      
       err = dir_unlink (node_ulfs->port, name);
       if ((err) && (err != ENOENT))
 	break;
@@ -250,11 +267,9 @@ node_unlink_file (node_t *dir, char *name)
       if (!err)
 	removed++;
 
-      /* Ignore ENOENT.  */
-      err = 0;
     }
 
-  if (!removed)
+  if ((!err) && (!removed))
     err = ENOENT;
 
   return err;
