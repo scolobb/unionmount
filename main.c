@@ -117,12 +117,12 @@ main (int argc, char **argv)
   if (! S_ISDIR (underlying_node_stat.st_mode))
     {
       if (underlying_node_stat.st_mode & S_IRUSR)
-	netfs_root_node->nn_stat.st_mode |= S_IRUSR;
+	netfs_root_node->nn_stat.st_mode |= S_IXUSR;
       if (underlying_node_stat.st_mode & S_IRGRP)
-	netfs_root_node->nn_stat.st_mode |= S_IRGRP;
+	netfs_root_node->nn_stat.st_mode |= S_IXGRP;
       if (underlying_node_stat.st_mode & S_IROTH)
 	netfs_root_node->nn_stat.st_mode |= S_IXOTH;
-    }
+    } 
 
   /* Update the timestamps of the root node.  */
   fshelp_touch (&netfs_root_node->nn_stat,

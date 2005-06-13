@@ -1,3 +1,9 @@
+2005-06-13  Gianluca Guida  <glguida@gmail.com>
+
+	* main.c (main): Set properly netfs_root_node permissions when
+	underlying node is not a file
+	Reported by Alfred M. Szmidt.
+
 2005-05-31  Gianluca Guida  <glguida@gmail.com>
 
 	* node.c (node_unlink_file): Use lookup to figure out whether a file
