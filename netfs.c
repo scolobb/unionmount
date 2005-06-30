@@ -56,6 +56,18 @@ netfs_append_args (char **argz, size_t *argz_len)
 	  err = argz_add (argz, argz_len,
 			  OPT_LONG (OPT_LONG_WRITABLE));
       if (! err)
+	if (ulfs->priority)
+	  {
+	    char *buf = NULL;
+	    if ((err = asprintf (&buf, "%s=%s", OPT_LONG (OPT_LONG_PRIORITY), 
+		      ulfs->priority)) != -1)
+	      {
+		err = argz_add (argz, argz_len, buf);
+		free (buf);
+	      }
+	  }
+
+      if (! err)
 	{
 	  if (ulfs->path)
 	    err = argz_add (argz, argz_len, ulfs->path);

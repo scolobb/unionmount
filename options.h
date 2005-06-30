@@ -25,7 +25,9 @@
 #define OPT_DEBUG      'd'
 #define OPT_CACHE_SIZE 'c'
 #define OPT_REMOVE     'r'
+#define OPT_ADD        'a'
 #define OPT_PATTERN    'm'
+#define OPT_PRIORITY   'p'
 #define OPT_STOW       's'
 
 /* The long options.  */
@@ -34,7 +36,9 @@
 #define OPT_LONG_DEBUG      "debug"
 #define OPT_LONG_CACHE_SIZE "cache-size"
 #define OPT_LONG_REMOVE     "remove"
+#define OPT_LONG_ADD        "add"
 #define OPT_LONG_PATTERN    "match"
+#define OPT_LONG_PRIORITY   "priority"
 #define OPT_LONG_STOW       "stow"
 
 #define OPT_LONG(o) "--" o
@@ -44,3 +48,6 @@ extern struct argp argp_startup;
 
 /* The final argp parser for startup arguments.  */
 extern struct argp argp_runtime;
+
+#define ULFS_MODE_ADD    0
+#define ULFS_MODE_REMOVE 1

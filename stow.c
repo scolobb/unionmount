@@ -34,6 +34,7 @@ struct stow_privdata
 {
   struct patternlist *patternlist;
   int flags;
+  int priority;
   struct mutex lock;
 };
 
@@ -51,7 +52,7 @@ _stow_registermatchingdirs (char *arg, char *dirpath, void *priv)
 
   filepath = make_filepath (dirpath, arg);
 
-  err = ulfs_register (filepath, privdata->flags);
+  err = ulfs_register (filepath, privdata->flags, privdata->priority);
 
   free (filepath);
 
@@ -82,7 +83,7 @@ _stow_scanstowentry (char *arg, char *dirpath, void *priv)
   if (patternlist_isempty (privdata->patternlist))
     {
 
-      err = ulfs_register (filepath, privdata->flags);
+      err = ulfs_register (filepath, privdata->flags, privdata->priority);
       if (err)
 	{
 	  mutex_unlock (&privdata->lock);
@@ -253,7 +254,8 @@ _stow_notify_thread()
 /* Interface to unionfs.  */
 
 error_t
-stow_diradd (char *dir, int flags, struct patternlist *patternlist)
+stow_diradd (char *dir, int flags, struct patternlist *patternlist, 
+	     int priority)
 {
 
   error_t err;
@@ -291,6 +293,7 @@ stow_diradd (char *dir, int flags, struct patternlist *patternlist)
 
   mypriv->patternlist = patternlist;
   mypriv->flags = flags;
+  mypriv->priority = priority;
   mutex_init (&mypriv->lock);
   
   err = for_each_subdir_priv (dir, _stow_scanstowentry, (void *)mypriv);

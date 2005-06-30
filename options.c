@@ -54,10 +54,14 @@ const struct argp_option argp_common_options[] =
     { 0, 0, 0, 0, "Runtime options:", 1 },
     { OPT_LONG_STOW, OPT_STOW, "STOWDIR", 0,
       "stow given directory", 1},
+    { OPT_LONG_PRIORITY, OPT_PRIORITY, "VALUE", 0,
+      "Set the priority for the following filesystem to VALUE", 1},
     { OPT_LONG_PATTERN, OPT_PATTERN, "PATTERN", 0,
       "add only nodes of the underlying filesystem matching pattern", 1},
     { OPT_LONG_REMOVE, OPT_REMOVE, 0, 0,
       "remove the following filesystem", 1 },
+    { OPT_LONG_ADD, OPT_ADD, 0, 0,
+      "add the following filesystem (Default)", 1 },
     { 0 }
   };
 
@@ -71,8 +75,8 @@ const struct argp_option argp_startup_options[] =
 error_t
 argp_parse_common_options (int key, char *arg, struct argp_state *state)
 {
-  static int ulfs_flags = 0, ulfs_remove = 0, ulfs_modified = 0,
-    ulfs_match = 0;
+  static int ulfs_flags = 0, ulfs_mode = 0, ulfs_modified = 0,
+    ulfs_match = 0, ulfs_priority = 0;
   static struct patternlist ulfs_patternlist =
     {    
       .lock = MUTEX_INITIALIZER,
@@ -86,6 +90,10 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       ulfs_flags |= FLAG_ULFS_WRITABLE;
       break;
 
+    case OPT_PRIORITY:		/* --priority */
+      ulfs_priority = strtol (arg, NULL, 10);
+      break;
+
     case OPT_DEBUG:		/* --debug  */
       unionfs_flags |= FLAG_UNIONFS_MODE_DEBUG;
       break;
@@ -94,8 +102,12 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       ncache_size = strtol (arg, NULL, 10);
       break;
 
+    case OPT_ADD:		/* --add */
+      ulfs_mode = ULFS_MODE_ADD;
+      break;
+
     case OPT_REMOVE:		/* --remove  */
-      ulfs_remove = 1;
+      ulfs_mode = ULFS_MODE_REMOVE;
       break;
 
     case OPT_PATTERN:           /* --match  */
@@ -104,18 +116,18 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       break;
 
     case OPT_STOW:		/* --stow */
-      err = stow_diradd (arg, ulfs_flags, &ulfs_patternlist, ulfs_remove);
+      err = stow_diradd (arg, ulfs_flags, &ulfs_patternlist, ulfs_priority);
       if (err)
 	error (EXIT_FAILURE, err, "stow_diradd");
       ulfs_modified = 1;
-      ulfs_flags = ulfs_remove = 0;
+      ulfs_flags = ulfs_mode = ulfs_priority = 0;
       ulfs_match = 0;
       break;
 
     case OPT_UNDERLYING:	/* --underlying  */
     case ARGP_KEY_ARG:
 
-      if (ulfs_remove)
+      if (ulfs_mode == ULFS_MODE_REMOVE)
 	{
 	  err = ulfs_unregister (arg);
 	  if (err == ENOENT)
@@ -124,16 +136,16 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
 	    err = 0;
 	}
       else
-	err = ulfs_register (arg, ulfs_flags);
+	err = ulfs_register (arg, ulfs_flags, ulfs_priority);
       if (err)
 	error (EXIT_FAILURE, err, "ulfs_register");
       ulfs_modified = 1;
-      ulfs_flags = ulfs_remove = 0;
+      ulfs_flags = ulfs_mode = ulfs_priority = 0;
       ulfs_match = 0;
       break;
 
     case ARGP_KEY_END:
-      ulfs_flags = ulfs_remove = 0;
+      ulfs_flags = ulfs_mode = 0;
       if (ulfs_modified && parsing_startup_options_finished)
 	{
 	  root_update_schedule ();

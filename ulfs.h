@@ -27,6 +27,7 @@ typedef struct ulfs
 {
   char *path;
   int flags;
+  int priority;
   struct ulfs *next, *prev;
 } ulfs_t;
 
@@ -49,7 +50,7 @@ extern unsigned int ulfs_num;
 extern struct mutex ulfs_lock;
 
 /* Register a new underlying filesystem.  */
-error_t ulfs_register (char *path, int flags);
+error_t ulfs_register (char *path, int flags, int priority);
 
 /* Unregister an underlying filesystem.  */
 error_t ulfs_unregister (char *path);

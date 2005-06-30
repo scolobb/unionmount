@@ -83,17 +83,54 @@ ulfs_destroy (ulfs_t *ulfs)
   free (ulfs);
 }
 
-/* Install ULFS into the linked list of registered filesystems.  */
+/* Install ULFS into the linked list of registered filesystems in
+ * priority order.  */
 void
 ulfs_install (ulfs_t *ulfs)
 {
-  ulfs->next = ulfs_chain_start;
-  ulfs->prev = NULL;
+  ulfs_t *u = ulfs_chain_start;
+  int insert_at_end = 0;
+  if (ulfs_num == 0)
+    {
+      ulfs_chain_start = ulfs;
+      return;
+    }
 
-  if (ulfs->next)
-    ulfs->next->prev = ulfs;
+  /* walk the chain until a filesystem has a priority that's too high. */
+  while (u->priority > ulfs->priority)
+    {
+      if (u->next == NULL)
+	{
+	  insert_at_end = 1;
+	  break;
+	}
+      u = u->next;
+    }
 
-  ulfs_chain_start = ulfs;
+  if (insert_at_end)
+    {
+      u->next = ulfs;
+      ulfs->prev = u;
+    }
+  else
+    {
+      if (u == ulfs_chain_start)
+	{
+	  ulfs_chain_start = ulfs;
+	  ulfs->next = u;
+	  ulfs->prev = NULL;
+	  u->prev = ulfs;
+	}
+      else
+	{
+	  ulfs->next = u;
+	  ulfs->prev = u->prev;
+	  u->prev->next = ulfs;
+	  u->prev = ulfs;
+	}
+    }
+
+  return;
 }
 
 /* Remove ULFS from the linked list of registered filesystems.  */
@@ -177,7 +214,7 @@ ulfs_for_each_under_priv (char *path_under,
 
 /* Register a new underlying filesystem.  */
 error_t
-ulfs_register (char *path, int flags)
+ulfs_register (char *path, int flags, int priority)
 {
   ulfs_t *ulfs;
   error_t err;
@@ -194,6 +231,7 @@ ulfs_register (char *path, int flags)
   if (! err)
     {
       ulfs->flags = flags;
+      ulfs->priority = priority;
       ulfs_install (ulfs);
       ulfs_num++;
     }
