@@ -1,3 +1,17 @@
+2006-04-13  Ben Asselstine  <benasselstine@gmail.com>
+
+	* options.c (argp_parse_common_options)
+	(argp_parse_startup_options, parsing_startup_options_finished)
+	(argp_common_options, argp_startup_options)
+	(argp_parser_common_options, argp_parser_startup_options)
+	(argp_children_runtime): Make these static.
+	* ulfs.c (ulfs_create, ulfs_destroy, ulfs_install)
+	(ulfs_uninstall, ulfs_get_path): Likewise.
+
+	* ulfs.h (ulfs_get_path): Remove declaration.
+
+	* lib.c (for_each_subdir): Remove unused variables.
+
 2005-06-27  Ben Asselstine  <benasselstine@gmail.com>
 
 	* ulfs.c (ulfs_install): Rewrote to allow insertions of
