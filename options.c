@@ -38,10 +38,10 @@
    startup options.  Whenever the argument parser is later called to
    modify the underlying filesystems of the root node, the root node
    is initialized accordingly directly by the parser.  */
-int parsing_startup_options_finished;
+static int parsing_startup_options_finished;
 
 /* Argp options common to the runtime and startup parser.  */
-const struct argp_option argp_common_options[] =
+static const struct argp_option argp_common_options[] =
   {
     { OPT_LONG_UNDERLYING, OPT_UNDERLYING, 0, 0,
       "add the underlying node to the unionfs" },
@@ -66,13 +66,13 @@ const struct argp_option argp_common_options[] =
   };
 
 /* Argp options only meaningful for startup parsing.  */
-const struct argp_option argp_startup_options[] =
+static const struct argp_option argp_startup_options[] =
   {
     { 0 }
   };
 
 /* Argp parser function for the common options.  */
-error_t
+static error_t
 argp_parse_common_options (int key, char *arg, struct argp_state *state)
 {
   static int ulfs_flags = 0, ulfs_mode = 0, ulfs_modified = 0,
@@ -169,7 +169,7 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
 }
 
 /* Argp parser function for the startup oprtions.  */
-error_t
+static error_t
 argp_parse_startup_options (int key, char *arg, struct argp_state *state)
 {
   error_t err = 0;
@@ -185,15 +185,15 @@ argp_parse_startup_options (int key, char *arg, struct argp_state *state)
 }
 
 /* Argp parser for only the common options.  */
-const struct argp argp_parser_common_options =
+static const struct argp argp_parser_common_options =
   { argp_common_options, argp_parse_common_options, 0, 0, 0 };
 
 /* Argp parser for only the startup options.  */
-struct argp argp_parser_startup_options =
+static struct argp argp_parser_startup_options =
   { argp_startup_options, argp_parse_startup_options, 0, 0, 0 };
 
 /* The children parser for runtime arguments.  */
-const struct argp_child argp_children_runtime[] =
+static const struct argp_child argp_children_runtime[] =
   {
     { &argp_parser_common_options },
     { &netfs_std_runtime_argp },

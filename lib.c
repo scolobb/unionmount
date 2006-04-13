@@ -174,9 +174,6 @@ for_each_subdir (char *path, error_t (*func) (char *, char *))
 
   for (dirent = dirent_list; (! err) && (*dirent); dirent++)
     {
-      char *name;
-      struct stat filestat;
-
       if ((!strcmp ((*dirent)->d_name, "."))
 	  || (!strcmp ((*dirent)->d_name, "..")))
 	continue;

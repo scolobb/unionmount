@@ -46,7 +46,7 @@ unsigned int ulfs_num;
 struct mutex ulfs_lock = MUTEX_INITIALIZER;
 
 /* Create a new ulfs element.  */
-error_t
+static error_t
 ulfs_create (char *path, ulfs_t **ulfs)
 {
   ulfs_t *ulfs_new = malloc (sizeof (ulfs_t));
@@ -76,7 +76,7 @@ ulfs_create (char *path, ulfs_t **ulfs)
 }
 
 /* Destroy an ulfs element.  */
-void
+static void
 ulfs_destroy (ulfs_t *ulfs)
 {
   free (ulfs->path);
@@ -85,7 +85,7 @@ ulfs_destroy (ulfs_t *ulfs)
 
 /* Install ULFS into the linked list of registered filesystems in
  * priority order.  */
-void
+static void
 ulfs_install (ulfs_t *ulfs)
 {
   ulfs_t *u = ulfs_chain_start;
@@ -134,7 +134,7 @@ ulfs_install (ulfs_t *ulfs)
 }
 
 /* Remove ULFS from the linked list of registered filesystems.  */
-void
+static void
 ulfs_uninstall (ulfs_t *ulfs)
 {
   if (ulfs == ulfs_chain_start)
@@ -168,7 +168,7 @@ ulfs_get_num (int num, ulfs_t **ulfs)
 }
 
 /* Get an ulfs element by the associated path.  */
-error_t
+static error_t
 ulfs_get_path (char *path, ulfs_t **ulfs)
 {
   error_t err = ENOENT;

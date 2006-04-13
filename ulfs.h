@@ -58,9 +58,6 @@ error_t ulfs_unregister (char *path);
 /* Get an ULFS element by it's index.  */
 error_t ulfs_get_num (int num, ulfs_t **ulfs);
 
-/* Get an ulfs element by the associated path.  */
-error_t ulfs_get_path (char *path, ulfs_t **ulfs);
-
 /* Removes invalid ulfs entries.  */
 void ulfs_check (void);
 
