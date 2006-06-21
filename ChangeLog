@@ -1,3 +1,8 @@
+2006-06-21  Alfred M. Szmidt  <ams@gnu.org>
+
+	* lib.c (for_each_subdir): Revert previous change.  Reported by
+	Aanjhan Ranganathan <aanjhan@tuxmaniac.com>.
+
 2006-04-13  Ben Asselstine  <benasselstine@gmail.com>
 
 	* options.c (argp_parse_common_options)
