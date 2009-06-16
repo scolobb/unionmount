@@ -1,10 +1,12 @@
 # Hurd unionfs
-# Copyright (C) 2001, 2002, 2003, 2005 Free Software Foundation, Inc.
+#
+# Copyright (C) 2001, 2002, 2003, 2005, 2009 Free Software Foundation, Inc.
+#
 # Written by Jeroen Dekkers <jeroen@dekkers.cx>.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or *
+# the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful, but
@@ -58,11 +60,11 @@ $(mig-sheader-prefix)%_S.h %Server.c: %.sdefsi
 		    -sheader $(mig-sheader-prefix)$*_S.h -server $*Server.c \
 		    -user /dev/null -header /dev/null < $<
 
-%.sdefsi: %.defs
-	$(CPP) $(CPPFLAGS) $(MIGSFLAGS) $($*-MIGSFLAGS) -DSERVERPREFIX=S_ $< -o $@
-
-vpath %.defs $(prefix)/include/hurd
-
+%.sdefsi:
+	echo '#include <hurd/$*.defs>' | \
+	  $(CPP) \
+	    $(CPPFLAGS) $(MIGSFLAGS) $($*-MIGSFLAGS) -DSERVERPREFIX=S_ \
+	    -x c - -o $@
 
 
 all: unionfs
