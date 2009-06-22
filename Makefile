@@ -25,7 +25,7 @@ MIGCOM = mig -cc cat - /dev/null
 CFLAGS += -Wall -g -O2 -D_FILE_OFFSET_BITS=64 -std=gnu99 \
 	  -DDEBUG
 LDFLAGS += -lnetfs -lfshelp -liohelp -lthreads \
-           -lports -lihash -lshouldbeinlibc
+           -lports -lihash -lshouldbeinlibc -lhurdbugaddr
 OBJS = main.o node.o lnode.o ulfs.o ncache.o netfs.o \
        lib.o options.o pattern.o stow.o update.o
 

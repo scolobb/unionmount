@@ -1,5 +1,5 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005, 2009 Free Software Foundation, Inc.
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -210,8 +210,6 @@ const struct argp_child argp_children_startup[] =
   };
 
 const char *argp_program_version = STANDARD_HURD_VERSION (unionfs);
-const char *argp_program_bug_address = 
-"Gianluca Guida <glguida@gmail.com>";
 
 #define ARGS_DOC "FILESYSTEMS ..."
 #define DOC      "Hurd unionfs server"
