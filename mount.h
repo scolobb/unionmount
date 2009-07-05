@@ -23,10 +23,29 @@
 #ifndef INCLUDED_MOUNT_H
 #define INCLUDED_MOUNT_H
 
+#include <error.h>
 #include <unistd.h>
+#include <hurd/hurd_types.h>
+
+#include "node.h"
 
 /* The command line for starting the mountee.  */
 extern char * mountee_argz;
 extern size_t mountee_argz_len;
+
+extern mach_port_t mountee_root;
+
+extern int mountee_started;
+
+/* Starts the mountee (given by `argz` and `argz_len`), attaches it to
+   the node `np` and opens a port `port` to the mountee with
+   `flags`.  */
+error_t
+start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
+	       mach_port_t * port);
+
+/* Sets up a proxy node and sets the translator on it.  */
+error_t
+setup_unionmount (void);
 
 #endif /* not INCLUDED_MOUNT_H */

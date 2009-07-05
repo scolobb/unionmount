@@ -195,6 +195,13 @@ netfs_validate_stat (struct node *np, struct iouser *cred)
     }
   else 
     {
+      if (!mountee_started)
+	{
+	  err = setup_unionmount ();
+	  if (err)
+	    error (EXIT_FAILURE, err, "failed to set up the mountee");
+	}
+
       _get_node_size (np, &np->nn_stat.st_size); 
     }
 
