@@ -1,6 +1,9 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005, 2009 Free Software Foundation, Inc.
+
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
+
+   Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -31,6 +34,7 @@
 
 #include "lib.h"
 #include "ulfs.h"
+#include "mount.h"
 
 /* The start of the ulfs chain.  */
 ulfs_t *ulfs_chain_start;
@@ -212,14 +216,16 @@ ulfs_for_each_under_priv (char *path_under,
   return err;
 }
 
-/* Register a new underlying filesystem.  */
+/* Register a new underlying filesystem.  A null path refers to the
+   underlying filesystem; a path equal to an empty string refers to
+   the filesystem of the mountee.  */
 error_t
 ulfs_register (char *path, int flags, int priority)
 {
   ulfs_t *ulfs;
   error_t err;
 
-  if (path)
+  if (path && path[0])
     {
       err = check_dir (path);
       if (err)
@@ -261,7 +267,12 @@ ulfs_check ()
     {
       
       if (u->path)
-	p = file_name_lookup (u->path, O_READ | O_DIRECTORY, 0);
+	{
+	  if (!u->path[0])
+	    p = mountee_root;
+	  else
+	    p = file_name_lookup (u->path, O_READ | O_DIRECTORY, 0);
+	}
       else
 	p = underlying_node;
 	  

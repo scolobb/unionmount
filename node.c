@@ -1,6 +1,9 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005, 2009 Free Software Foundation, Inc.
+
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
+
+   Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -33,6 +36,7 @@
 #include "node.h"
 #include "ulfs.h"
 #include "lib.h"
+#include "mount.h"
 
 /* Declarations for functions only used in this file.  */
 
@@ -535,8 +539,13 @@ node_init_root (node_t *node)
 	  break;
 
       if (ulfs->path)
-	node_ulfs->port = file_name_lookup (ulfs->path,
-					    O_READ | O_DIRECTORY, 0);
+	{
+	if (!ulfs->path[0])
+	  node_ulfs->port = mountee_root;
+	else
+	  node_ulfs->port = file_name_lookup (ulfs->path,
+					      O_READ | O_DIRECTORY, 0);
+	}
       else
 	node_ulfs->port = underlying_node;
 	  

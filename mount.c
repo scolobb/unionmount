@@ -27,6 +27,7 @@
 
 #include "mount.h"
 #include "lib.h"
+#include "ulfs.h"
 
 /* The command line for starting the mountee.  */
 char * mountee_argz;
@@ -138,7 +139,9 @@ start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
   return err;
 }				/* start_mountee */
 
-/* Sets up a proxy node and sets the translator on it.  */
+/* Sets up a proxy node, sets the translator on it, and registers the
+   filesystem published by the translator in the list of merged
+   filesystems.  */
 error_t
 setup_unionmount (void)
 {
@@ -164,6 +167,15 @@ setup_unionmount (void)
 		       O_READ, &mountee_root);
   if (err)
     return err;
+
+  /* A path equal to "" will mean that the current ULFS entry is the
+     mountee port.  */
+  ulfs_register ("", 0, 0);
+
+  /* Reinitialize the list of merged filesystems to take into account
+     the newly added mountee's filesystem.  */
+  ulfs_check ();
+  node_init_root (netfs_root_node);
 
   mountee_started = 1;
 
