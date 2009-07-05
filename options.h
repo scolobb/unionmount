@@ -1,6 +1,9 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2009 Free Software Foundation, Inc.
+
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
+
+   Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -29,6 +32,7 @@
 #define OPT_PATTERN    'm'
 #define OPT_PRIORITY   'p'
 #define OPT_STOW       's'
+#define OPT_MOUNT      't'
 
 /* The long options.  */
 #define OPT_LONG_UNDERLYING "underlying"
@@ -40,6 +44,7 @@
 #define OPT_LONG_PATTERN    "match"
 #define OPT_LONG_PRIORITY   "priority"
 #define OPT_LONG_STOW       "stow"
+#define OPT_LONG_MOUNT      "mount"
 
 #define OPT_LONG(o) "--" o
 

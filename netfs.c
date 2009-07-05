@@ -3,6 +3,8 @@
 
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
+   Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
+
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
    published by the Free Software Foundation; either version 2 of the
@@ -37,6 +39,7 @@
 #include "lib.h"
 #include "ncache.h"
 #include "options.h"
+#include "mount.h"
 
 /* Return an argz string describing the current options.  Fill *ARGZ
    with a pointer to newly malloced storage holding the list and *LEN
@@ -45,6 +48,32 @@ error_t
 netfs_append_args (char **argz, size_t *argz_len)
 {
   error_t err = 0;
+
+  /* Add the --mount option to the result.  */
+  if (mountee_argz)
+    {
+      char * buf = NULL;
+
+      /* The mountee command line converted back to a 0-terminated
+	 string form.  */
+      char * mountee_cl;
+
+      mountee_cl = malloc (mountee_argz_len);
+      if (!mountee_cl)
+	return ENOMEM;
+
+      memcpy (mountee_cl, mountee_argz, mountee_argz_len);
+      argz_stringify (mountee_cl, mountee_argz_len, ' ');
+
+      if ((err = asprintf (&buf, "%s=\"%s\"", OPT_LONG (OPT_LONG_MOUNT),
+			   mountee_cl)) != -1)
+	{
+	  err = argz_add (argz, argz_len, buf);
+	  free (buf);
+	}
+
+      free (mountee_cl);
+    }
 
   ulfs_iterate
     {

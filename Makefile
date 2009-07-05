@@ -3,6 +3,8 @@
 # Copyright (C) 2001, 2002, 2003, 2005, 2009 Free Software Foundation, Inc.
 #
 # Written by Jeroen Dekkers <jeroen@dekkers.cx>.
+#
+# Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +29,7 @@ CFLAGS += -Wall -g -O2 -D_FILE_OFFSET_BITS=64 -std=gnu99 \
 LDFLAGS += -lnetfs -lfshelp -liohelp -lthreads \
            -lports -lihash -lshouldbeinlibc -lhurdbugaddr
 OBJS = main.o node.o lnode.o ulfs.o ncache.o netfs.o \
-       lib.o options.o pattern.o stow.o update.o
+       lib.o options.o pattern.o stow.o update.o mount.o
 
 MIGCOMSFLAGS = -prefix stow_
 fs_notify-MIGSFLAGS = -imacros ./stow-mutations.h

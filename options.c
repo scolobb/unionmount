@@ -1,6 +1,9 @@
 /* Hurd unionfs
    Copyright (C) 2001, 2002, 2005, 2009 Free Software Foundation, Inc.
+
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
+
+   Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -23,6 +26,7 @@
 
 #include <argp.h>
 #include <error.h>
+#include <argz.h>
 
 #include "options.h"
 #include "ulfs.h"
@@ -33,6 +37,7 @@
 #include "pattern.h"
 #include "stow.h"
 #include "update.h"
+#include "mount.h"
 
 /* This variable is set to a non-zero value after parsing of the
    startup options.  Whenever the argument parser is later called to
@@ -51,6 +56,9 @@ static const struct argp_option argp_common_options[] =
       "send debugging messages to stderr" },
     { OPT_LONG_CACHE_SIZE, OPT_CACHE_SIZE, "SIZE", 0,
       "specify the maximum number of nodes in the cache" },
+    { OPT_LONG_MOUNT, OPT_MOUNT, "MOUNTEE", 0,
+      "use MOUNTEE as translator command line, start the translator,"
+      "and add its filesystem"},
     { 0, 0, 0, 0, "Runtime options:", 1 },
     { OPT_LONG_STOW, OPT_STOW, "STOWDIR", 0,
       "stow given directory", 1},
@@ -122,6 +130,17 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       ulfs_modified = 1;
       ulfs_flags = ulfs_mode = ulfs_priority = 0;
       ulfs_match = 0;
+      break;
+
+    case OPT_MOUNT:
+      if (mountee_argz)
+	error (EXIT_FAILURE, err, "You can specify only one %s option.",
+	       OPT_LONG (OPT_LONG_MOUNT));
+
+      /* TODO: Improve the mountee command line parsing mechanism.  */
+      err = argz_create_sep (arg, ' ', &mountee_argz, &mountee_argz_len);
+      if (err)
+	error (EXIT_FAILURE, err, "argz_create_sep");
       break;
 
     case OPT_UNDERLYING:	/* --underlying  */
