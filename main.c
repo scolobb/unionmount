@@ -1,6 +1,9 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2005, 2009 Free Software Foundation, Inc.
+
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
+
+   Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -127,6 +130,11 @@ main (int argc, char **argv)
   /* Update the timestamps of the root node.  */
   fshelp_touch (&netfs_root_node->nn_stat,
 		TOUCH_ATIME | TOUCH_MTIME | TOUCH_CTIME, maptime);
+
+  /* The update thread will start the mountee when unionfs will be
+     ready for servicing RPCs (will have completed the
+     initialization).  */
+  root_update_schedule ();
 
   /* Start serving clients.  */
   for (;;)

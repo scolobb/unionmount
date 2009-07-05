@@ -1,6 +1,9 @@
 /* Hurd unionfs
-   Copyright (C) 2005 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2009 Free Software Foundation, Inc.
+
    Written by Gianluca Guida <glguida@gmail.com>.
+
+   Adapted for unionmount by Sergiu Ivanov <unlimitedscolobb@gmail.com>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -30,6 +33,7 @@
 #include "ncache.h"
 #include "node.h"
 #include "ulfs.h"
+#include "mount.h"
 
 /* Reader lock is used by threads that are going to
    add/remove an ulfs; writer lock is hold by the 
@@ -49,6 +53,13 @@ _root_update_thread ()
 	mutex_unlock (&update_lock);
 
       rwlock_writer_lock (&update_rwlock);
+
+      if (!mountee_started)
+	{
+	  err = setup_unionmount ();
+	  if (err)
+	    error (EXIT_FAILURE, err, "failed to setup the mountee");
+	}
 
       do 
 	{

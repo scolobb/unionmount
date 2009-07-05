@@ -172,11 +172,6 @@ setup_unionmount (void)
      mountee port.  */
   ulfs_register ("", 0, 0);
 
-  /* Reinitialize the list of merged filesystems to take into account
-     the newly added mountee's filesystem.  */
-  ulfs_check ();
-  node_init_root (netfs_root_node);
-
   mountee_started = 1;
 
   return 0;
