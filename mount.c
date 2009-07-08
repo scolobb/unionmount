@@ -125,13 +125,6 @@ start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
   if (err)
     return err;
 
-  /* Attach the mountee to the port opened in the previous call.  */
-  err = file_set_translator (underlying_port, 0, FS_TRANS_SET, 0, argz,
-			     argz_len, mountee_control, MACH_MSG_TYPE_COPY_SEND);
-  port_dealloc (underlying_port);
-  if (err)
-    return err;
-
   /* Obtain the port to the root of the newly-set translator.  */
   err = fsys_getroot (mountee_control, MACH_PORT_NULL, MACH_MSG_TYPE_COPY_SEND,
 		      uids, nuids, gids, ngids, flags, &retry_port,
