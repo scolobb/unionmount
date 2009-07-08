@@ -1,5 +1,6 @@
 /* Hurd unionfs
-   Copyright (C) 2001, 2002, 2003, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2005, 2009 Free Software Foundation, Inc.
+
    Written by Moritz Schulte <moritz@duesseldorf.ccc.de>.
 
    This program is free software; you can redistribute it and/or
@@ -282,7 +283,40 @@ error_t
 netfs_attempt_sync (struct iouser *cred, struct node *np,
 		    int wait)
 {
-  return EOPNOTSUPP;
+  error_t err = 0;
+
+  /* The index of the currently analyzed filesystem.  */
+  int i = 0;
+
+  /* The information about the currently analyzed filesystem.  */
+  ulfs_t * ulfs;
+
+  mutex_lock (&ulfs_lock);
+
+  /* Sync every writable directory associated with `np`.
+
+     TODO: Rewrite this after having modified ulfs.c and node.c to
+     store the paths and ports to the underlying directories in one
+     place, because now iterating over both lists looks ugly.  */
+  node_ulfs_iterate_unlocked (np)
+  {
+    /* Get the information about the current filesystem.  */
+    err = ulfs_get_num (i, &ulfs);
+    if (err)
+      break;
+
+    if (ulfs->flags & FLAG_ULFS_WRITABLE)
+      {
+	err = file_sync (node_ulfs->port, wait, 0);
+	if (err)
+	  break;
+      }
+
+    ++i;
+  }
+
+  mutex_unlock (&ulfs_lock);
+  return err;
 }
 
 /* This should sync the entire remote filesystem.  If WAIT is set,
@@ -290,7 +324,10 @@ netfs_attempt_sync (struct iouser *cred, struct node *np,
 error_t
 netfs_attempt_syncfs (struct iouser *cred, int wait)
 {
-  return 0;
+  /* The complete list of ports to the merged filesystems is
+     maintained in the root node of unionfs, so if we sync it, we sync
+     every single merged directory.  */
+  return netfs_attempt_sync (cred, netfs_root_node, wait);
 }
 
 /* lookup */
