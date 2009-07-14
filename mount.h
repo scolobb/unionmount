@@ -34,6 +34,7 @@ extern char * mountee_argz;
 extern size_t mountee_argz_len;
 
 extern mach_port_t mountee_root;
+extern mach_port_t mountee_control;
 
 extern int mountee_started;
 

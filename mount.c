@@ -24,6 +24,7 @@
 
 #include <hurd/fsys.h>
 #include <fcntl.h>
+#include <cthreads.h>
 
 #include "mount.h"
 #include "lib.h"
@@ -34,12 +35,17 @@ char * mountee_argz;
 size_t mountee_argz_len;
 
 mach_port_t mountee_root;
+mach_port_t mountee_control = MACH_PORT_NULL;
 
 int mountee_started = 0;
 
 /* Shows the mode in which the current instance of unionmount
    operates (transparent/non-transparent).  */
 int transparent_mount = 1;
+
+/* The port for receiving the notification about the shutdown of the
+   mountee.  */
+mach_port_t mountee_notify_port;
 
 /* Starts the mountee (given by `argz` and `argz_len`), attaches it to
    the node `np` and opens a port `port` to the mountee with
@@ -50,8 +56,6 @@ start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
 {
   error_t err;
   mach_port_t underlying_port;
-
-  mach_port_t mountee_control;
 
   /* Identity information about the unionfs process (for
      fsys_getroot).  */
@@ -133,6 +137,31 @@ start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
   return err;
 }				/* start_mountee */
 
+/* Listens to the MACH_NOTIFY_DEAD_NAME notification for the port on
+   the control port of the mountee.  */
+error_t
+mountee_server (mach_msg_header_t * inp, mach_msg_header_t * outp)
+{
+  if (inp->msgh_id == MACH_NOTIFY_DEAD_NAME)
+    {
+      /* Terminate operations conducted by unionfs and shut down.  */
+      netfs_shutdown (FSYS_GOAWAY_FORCE);
+      exit (0);
+    }
+
+  return 1;
+}				/* mountee_server */
+
+/* The main proc of the thread for listening for the
+   MACH_NOTIFY_DEAD_NAME notification on the control port of the
+   mountee.  */
+static void
+_mountee_listen_thread_proc (any_t * arg)
+{
+  while (1)
+    mach_msg_server (mountee_server, 0, mountee_notify_port);
+}
+
 /* Sets up a proxy node, sets the translator on it, and registers the
    filesystem published by the translator in the list of merged
    filesystems.  */
@@ -158,6 +187,38 @@ setup_unionmount (void)
 
   mountee_started = 1;
 
-  return 0;
+  /* The previously registered send-once right (used to hold the value
+     returned from mach_port_request_notification) */
+  mach_port_t prev;
+
+  /* Setup the port for receiving notifications.  */
+  err = mach_port_allocate (mach_task_self (), MACH_PORT_RIGHT_RECEIVE,
+		      &mountee_notify_port);
+  if (err)
+    return err;
+  err = mach_port_insert_right (mach_task_self (), mountee_notify_port,
+				mountee_notify_port, MACH_MSG_TYPE_MAKE_SEND);
+  if (err)
+    {
+      mach_port_deallocate (mach_task_self (), mountee_notify_port);
+      return err;
+    }
+
+  /* Request to be notified when the mountee goes away and
+     `mountee_control` becomes a dead name.  */
+  err = mach_port_request_notification (mach_task_self (), mountee_control,
+					MACH_NOTIFY_DEAD_NAME, 1, mountee_notify_port,
+					MACH_MSG_TYPE_MAKE_SEND_ONCE, &prev);
+  assert (prev == MACH_PORT_NULL);
+  if(err)
+    {
+      mach_port_deallocate (mach_task_self(), mountee_notify_port);
+      return err;
+    }
+
+  /* Create a new thread for listening to the notification.  */
+  cthread_detach (cthread_fork ((cthread_fn_t) _mountee_listen_thread_proc, NULL));
+
+  return err;
 }				/* setup_unionmount */
 
