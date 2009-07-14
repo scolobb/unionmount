@@ -37,6 +37,10 @@ mach_port_t mountee_root;
 
 int mountee_started = 0;
 
+/* Shows the mode in which the current instance of unionmount
+   operates (transparent/non-transparent).  */
+int transparent_mount = 1;
+
 /* Starts the mountee (given by `argz` and `argz_len`), attaches it to
    the node `np` and opens a port `port` to the mountee with
    `flags`.  */

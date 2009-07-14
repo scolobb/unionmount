@@ -56,9 +56,12 @@ static const struct argp_option argp_common_options[] =
       "send debugging messages to stderr" },
     { OPT_LONG_CACHE_SIZE, OPT_CACHE_SIZE, "SIZE", 0,
       "specify the maximum number of nodes in the cache" },
-    { OPT_LONG_MOUNT, OPT_MOUNT, "MOUNTEE", 0,
+    { OPT_LONG_NOMOUNT, OPT_NOMOUNT, "MOUNTEE", 0,
       "use MOUNTEE as translator command line, start the translator,"
       "and add its filesystem"},
+    { OPT_LONG_MOUNT, OPT_MOUNT, "MOUNTEE", 0,
+      "like --no-mount, but make it appear as if MOUNTEE had been set on the "
+      "underlying node directly"},
     { 0, 0, 0, 0, "Runtime options:", 1 },
     { OPT_LONG_STOW, OPT_STOW, "STOWDIR", 0,
       "stow given directory", 1},
@@ -131,6 +134,9 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       ulfs_flags = ulfs_mode = ulfs_priority = 0;
       ulfs_match = 0;
       break;
+
+    case OPT_NOMOUNT:
+      transparent_mount = 0;
 
     case OPT_MOUNT:
       if (mountee_argz)

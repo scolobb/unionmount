@@ -49,7 +49,7 @@ netfs_append_args (char **argz, size_t *argz_len)
 {
   error_t err = 0;
 
-  /* Add the --mount option to the result.  */
+  /* Add the --mount or --no-mount option to the result.  */
   if (mountee_argz)
     {
       char * buf = NULL;
@@ -58,6 +58,10 @@ netfs_append_args (char **argz, size_t *argz_len)
 	 string form.  */
       char * mountee_cl;
 
+      /* This will be either ``--mount'' or ``--no-mount'' depending
+	 on the whether the unionmount is transparent or not.  */
+      char * opt_name;
+
       mountee_cl = malloc (mountee_argz_len);
       if (!mountee_cl)
 	return ENOMEM;
@@ -65,8 +69,9 @@ netfs_append_args (char **argz, size_t *argz_len)
       memcpy (mountee_cl, mountee_argz, mountee_argz_len);
       argz_stringify (mountee_cl, mountee_argz_len, ' ');
 
-      if ((err = asprintf (&buf, "%s=\"%s\"", OPT_LONG (OPT_LONG_MOUNT),
-			   mountee_cl)) != -1)
+      opt_name = (transparent_mount ? OPT_LONG (OPT_LONG_MOUNT)
+		  : OPT_LONG (OPT_LONG_NOMOUNT));
+      if ((err = asprintf (&buf, "%s=\"%s\"", opt_name, mountee_cl)) != -1)
 	{
 	  err = argz_add (argz, argz_len, buf);
 	  free (buf);

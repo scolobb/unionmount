@@ -33,6 +33,7 @@
 #define OPT_PRIORITY   'p'
 #define OPT_STOW       's'
 #define OPT_MOUNT      't'
+#define OPT_NOMOUNT    'n'
 
 /* The long options.  */
 #define OPT_LONG_UNDERLYING "underlying"
@@ -45,6 +46,7 @@
 #define OPT_LONG_PRIORITY   "priority"
 #define OPT_LONG_STOW       "stow"
 #define OPT_LONG_MOUNT      "mount"
+#define OPT_LONG_NOMOUNT    "no-mount"
 
 #define OPT_LONG(o) "--" o
 
