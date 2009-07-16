@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <hurd/paths.h>
 #include <sys/mman.h>
+#include <hurd/fsys.h>
 
 #include "unionfs.h"
 #include "ulfs.h"
@@ -48,6 +49,36 @@ error_t
 netfs_append_args (char **argz, size_t *argz_len)
 {
   error_t err = 0;
+
+  if (transparent_mount)
+    {
+      /* We need to receive the mountee's arguments into a local
+	 buffer first, because in the case of an error
+	 netfs_S_fsys_get_options will try to free `*argz`, which
+	 might have already been freed in the mountee.
+
+	 The ``static'' bit is required because fsys_get_options
+	 returns an mmapped region.  */
+      static char * m_argz = NULL;
+      static size_t m_argz_len;
+
+      /* Forward this RPC directly to the mountee.  */
+      err = fsys_get_options (mountee_control, &m_argz, &m_argz_len);
+      if (err)
+	return err;
+
+      /* netfs_S_fsys_get_options has already malloced `*argz` for us,
+	 we will copy `m_argz` into it, because netfs_append_args is
+	 expected to return a malloced buffer, while fsys_get_options
+	 returns an mmapped buffer.  */
+      *argz = realloc (*argz, m_argz_len);
+      if(!*argz)
+	return ENOMEM;
+      memcpy (*argz, m_argz, m_argz_len);
+      *argz_len = m_argz_len;
+
+      return 0;
+    }
 
   /* Add the --mount or --no-mount option to the result.  */
   if (mountee_argz)
@@ -113,6 +144,24 @@ netfs_append_args (char **argz, size_t *argz_len)
     }
 
   return err;
+}
+
+error_t
+netfs_set_options (char *argz, size_t argz_len)
+{
+  if (transparent_mount)
+    {
+      error_t err;
+
+      /* Forward this RPC directly to the mountee.  */
+      err = fsys_set_options (mountee_control, argz, argz_len, 0);
+      return err;
+    }
+
+  if (netfs_runtime_argp)
+    return fshelp_set_options (netfs_runtime_argp, 0, argz, argz_len, 0);
+  else
+    return EOPNOTSUPP;
 }
 
 #ifndef __USE_FILE_OFFSET64
@@ -358,10 +407,75 @@ netfs_attempt_sync (struct iouser *cred, struct node *np,
 error_t
 netfs_attempt_syncfs (struct iouser *cred, int wait)
 {
+  if (transparent_mount)
+    {
+      error_t err = 0;
+
+      /* Sync the mountee (and its children, too).  */
+      err = fsys_syncfs (mountee_control, wait, 1);
+      if (err)
+	return err;
+    }
+
   /* The complete list of ports to the merged filesystems is
      maintained in the root node of unionfs, so if we sync it, we sync
      every single merged directory.  */
   return netfs_attempt_sync (cred, netfs_root_node, wait);
+}
+
+/* Shutdown the filesystem; flags are as for fsys_goaway.  */
+error_t
+netfs_shutdown (int flags)
+{
+  int nports;
+  int err;
+
+  if ((flags & FSYS_GOAWAY_UNLINK)
+      && S_ISDIR (netfs_root_node->nn_stat.st_mode))
+    return EBUSY;
+
+  /* Permit all current RPC's to finish, and then suspend any new ones.  */
+  err = ports_inhibit_class_rpcs (netfs_protid_class);
+  if (err)
+    return err;
+
+  nports = ports_count_class (netfs_protid_class);
+  if (((flags & FSYS_GOAWAY_FORCE) == 0) && nports)
+    /* There are outstanding user ports; resume operations. */
+    {
+      ports_enable_class (netfs_protid_class);
+      ports_resume_class_rpcs (netfs_protid_class);
+
+      return EBUSY;
+    }
+
+  if (!(flags & FSYS_GOAWAY_NOSYNC))
+    {
+      err = netfs_attempt_syncfs (0, flags);
+      if (err)
+        return err;
+    }
+
+  /* If `shutting_down` is set, unionfs is going away because the
+     mounee has just died, so we don't need to attempt to shut it
+     down.  */
+  if (!shutting_down)
+    {
+      shutting_down = 1;
+      err = fsys_goaway (mountee_control, flags);
+
+      if (err)
+	{
+	  if (err == EBUSY)
+	    {
+	      ports_enable_class (netfs_protid_class);
+	      ports_resume_class_rpcs (netfs_protid_class);
+	    }
+	  return err;
+	}
+    }
+
+  return 0;
 }
 
 /* lookup */

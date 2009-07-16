@@ -336,7 +336,7 @@ node_ulfs_free (node_t *node)
   node_ulfs_iterate_unlocked (node)
     {
       if (port_valid (node_ulfs->port)
-	  && node_ulfs->port != underlying_node)
+	  && (node_ulfs->port != underlying_node) && (node_ulfs->port != mountee_root))
 	port_dealloc (node_ulfs->port);
     }
 

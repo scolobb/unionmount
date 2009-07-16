@@ -43,6 +43,9 @@ int mountee_started = 0;
    operates (transparent/non-transparent).  */
 int transparent_mount = 1;
 
+/* Shows whether unionmount is shutting down.  */
+int shutting_down = 0;
+
 /* The port for receiving the notification about the shutdown of the
    mountee.  */
 mach_port_t mountee_notify_port;
@@ -142,8 +145,12 @@ start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
 error_t
 mountee_server (mach_msg_header_t * inp, mach_msg_header_t * outp)
 {
-  if (inp->msgh_id == MACH_NOTIFY_DEAD_NAME)
+  /* If `shutting_down` is set, the mountee has just been shut down by
+     netfs_shutdown and unionfs is on its way to going away.  */
+  if (!shutting_down && (inp->msgh_id == MACH_NOTIFY_DEAD_NAME))
     {
+      shutting_down = 1;
+
       /* Terminate operations conducted by unionfs and shut down.  */
       netfs_shutdown (FSYS_GOAWAY_FORCE);
       exit (0);

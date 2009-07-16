@@ -42,6 +42,9 @@ extern int mountee_started;
    operates (transparent/non-transparent).  */
 extern int transparent_mount;
 
+/* Shows whether unionmount is shutting down.  */
+extern int shutting_down;
+
 /* Starts the mountee (given by `argz` and `argz_len`), attaches it to
    the node `np` and opens a port `port` to the mountee with
    `flags`.  */
