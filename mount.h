@@ -46,8 +46,8 @@ extern int transparent_mount;
 extern int shutting_down;
 
 /* Starts the mountee (given by `argz` and `argz_len`), attaches it to
-   the node `np` and opens a port `port` to the mountee with
-   `flags`.  */
+   the node `np` if the unionmount is non-transparent and opens a port
+   `port` to the mountee with `flags`.  */
 error_t
 start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
 	       mach_port_t * port);

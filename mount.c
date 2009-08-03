@@ -29,6 +29,7 @@
 #include "mount.h"
 #include "lib.h"
 #include "ulfs.h"
+#include "unionfs.h"
 
 /* The command line for starting the mountee.  */
 char * mountee_argz;
@@ -51,8 +52,8 @@ int shutting_down = 0;
 mach_port_t mountee_notify_port;
 
 /* Starts the mountee (given by `argz` and `argz_len`), attaches it to
-   the node `np` and opens a port `port` to the mountee with
-   `flags`.  */
+   the node `np` if the unionmount is non-transparent and opens a port
+   `port` to the mountee with `flags`.  */
 error_t
 start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
 	       mach_port_t * port)
@@ -96,6 +97,16 @@ start_mountee (node_t * np, char * argz, size_t argz_len, int flags,
 		     void *cookie)
   {
     err = 0;
+
+    /* If the unionmount is transparent, we only have to supply the
+       real underlying node to the mountee.  */
+    if (transparent_mount)
+      {
+	*underlying = underlying_node;
+	*underlying_type  = MACH_MSG_TYPE_COPY_SEND;
+
+	return 0;
+      }
 
     /* The protid which will contain the port to the node on which the
        mountee will be sitting.  */
@@ -177,14 +188,18 @@ setup_unionmount (void)
 {
   error_t err = 0;
 
-  /* Set the mountee on the root node.
+  /* Set up the mountee.
      Note that the O_READ flag does not actually limit access to the
      mountee's filesystem considerably.  Whenever a client looks up a
      node which is not a directory, unionfs will give off a port to
      the node itself, withouth proxying it.  Proxying happens only for
      directory nodes.  */
-  err = start_mountee (netfs_root_node, mountee_argz, mountee_argz_len,
-		       O_READ, &mountee_root);
+  if (!transparent_mount)
+    err = start_mountee (netfs_root_node, mountee_argz, mountee_argz_len,
+			 O_READ, &mountee_root);
+  else
+    err = start_mountee (NULL, mountee_argz, mountee_argz_len,
+			 O_READ, &mountee_root);
   if (err)
     return err;
 
