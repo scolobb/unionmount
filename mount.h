@@ -36,6 +36,8 @@ extern size_t mountee_argz_len;
 extern mach_port_t mountee_root;
 extern mach_port_t mountee_control;
 
+extern int mountee_priority;
+
 extern int mountee_started;
 
 /* Shows the mode in which the current instance of unionmount

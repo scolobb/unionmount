@@ -93,6 +93,15 @@ netfs_append_args (char **argz, size_t *argz_len)
 	 on the whether the unionmount is transparent or not.  */
       char * opt_name;
 
+      /* Also append the priority of the mountee's filesystem.  */
+      if (mountee_priority)
+	if ((err = asprintf (&buf, "%s=%d", OPT_LONG (OPT_LONG_PRIORITY),
+			     mountee_priority)) != -1)
+	  {
+	    err = argz_add (argz, argz_len, buf);
+	    free (buf);
+	  }
+
       mountee_cl = malloc (mountee_argz_len);
       if (!mountee_cl)
 	return ENOMEM;
@@ -122,16 +131,21 @@ netfs_append_args (char **argz, size_t *argz_len)
 	  err = argz_add (argz, argz_len,
 			  OPT_LONG (OPT_LONG_WRITABLE));
       if (! err)
-	if (ulfs->priority)
-	  {
-	    char *buf = NULL;
-	    if ((err = asprintf (&buf, "%s=%s", OPT_LONG (OPT_LONG_PRIORITY), 
-		      ulfs->priority)) != -1)
-	      {
-		err = argz_add (argz, argz_len, buf);
-		free (buf);
-	      }
-	  }
+	{
+	  if (ulfs->path && !ulfs->path[0])
+	    continue;
+
+	  if (ulfs->priority)
+	    {
+	      char *buf = NULL;
+	      if ((err = asprintf (&buf, "%s=%s", OPT_LONG (OPT_LONG_PRIORITY),
+				   ulfs->priority)) != -1)
+		{
+		  err = argz_add (argz, argz_len, buf);
+		  free (buf);
+		}
+	    }
+	}
 
       if (! err)
 	{

@@ -147,6 +147,8 @@ argp_parse_common_options (int key, char *arg, struct argp_state *state)
       err = argz_create_sep (arg, ' ', &mountee_argz, &mountee_argz_len);
       if (err)
 	error (EXIT_FAILURE, err, "argz_create_sep");
+
+      mountee_priority = ulfs_priority;
       break;
 
     case OPT_UNDERLYING:	/* --underlying  */

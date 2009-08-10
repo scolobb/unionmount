@@ -38,6 +38,8 @@ size_t mountee_argz_len;
 mach_port_t mountee_root;
 mach_port_t mountee_control = MACH_PORT_NULL;
 
+int mountee_priority = 0;
+
 int mountee_started = 0;
 
 /* Shows the mode in which the current instance of unionmount
@@ -205,7 +207,7 @@ setup_unionmount (void)
 
   /* A path equal to "" will mean that the current ULFS entry is the
      mountee port.  */
-  ulfs_register ("", 0, 0);
+  ulfs_register ("", 0, mountee_priority);
 
   mountee_started = 1;
 
