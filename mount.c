@@ -33,9 +33,6 @@
 char * mountee_argz;
 size_t mountee_argz_len;
 
-/* The node the mountee is sitting on.  */
-node_t * mountee_node;
-
 mach_port_t mountee_root;
 
 int mountee_started = 0;
@@ -140,23 +137,13 @@ setup_unionmount (void)
 {
   error_t err = 0;
 
-  /* The mountee will be sitting on this node.  This node is based on
-     the netnode of the root node (it is essentially a clone of the
-     root node), so most RPCs on this node can be automatically
-     carried out correctly.  Note the we cannot set the mountee on the
-     root node directly, because in this case the mountee's filesystem
-     will obscure the filesystem published by unionfs.  */
-  mountee_node = netfs_make_node (netfs_root_node->nn);
-  if (!mountee_node)
-    return ENOMEM;
-
-  /* Set the mountee on the new node.
+  /* Set the mountee on the root node.
      Note that the O_READ flag does not actually limit access to the
      mountee's filesystem considerably.  Whenever a client looks up a
      node which is not a directory, unionfs will give off a port to
      the node itself, withouth proxying it.  Proxying happens only for
      directory nodes.  */
-  err = start_mountee (mountee_node, mountee_argz, mountee_argz_len,
+  err = start_mountee (netfs_root_node, mountee_argz, mountee_argz_len,
 		       O_READ, &mountee_root);
   if (err)
     return err;
